@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-06-14T17:18:20.372Z"
+status: verifying
+stopped_at: Phase 03 implementation complete; phase verification pending.
+last_updated: "2026-06-14T17:38:38.406Z"
 last_activity: 2026-06-14
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 14
-  completed_plans: 8
-  percent: 57
+  completed_plans: 9
+  percent: 64
 ---
 
 # Project State
@@ -25,18 +25,18 @@ See: .planning/PROJECT.md (updated 2026-06-14)
 
 ## Current Position
 
-Phase: 03 (hybrid-search-and-rerank-api) — EXECUTING
+Phase: 03 (hybrid-search-and-rerank-api) — VERIFYING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-14
 
-Progress: [██████░░░░] 57%
+Progress: [██████░░░░] 64%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: -
 - Total execution time: 0.0 hours
 
@@ -46,7 +46,7 @@ Progress: [██████░░░░] 57%
 |-------|-------|-------|----------|
 | 1. Local Data Contract and Ingestion | 3/3 | - | - |
 | 2. Index Lifecycle and Status | 3/3 | - | - |
-| 3. Hybrid Search and Rerank API | 2/3 | 31min | 16min |
+| 3. Hybrid Search and Rerank API | 3/3 | 44min | 15min |
 | 4. Quality, Safety, and Performance Validation | 0/2 | - | - |
 | 5. Documentation and Demo Delivery | 0/3 | - | - |
 
@@ -58,6 +58,7 @@ Progress: [██████░░░░] 57%
 *Updated after each plan completion*
 | Phase 03-hybrid-search-and-rerank-api P01 | 7min | 3 tasks | 9 files |
 | Phase 03-hybrid-search-and-rerank-api P02 | 24min | 3 tasks | 13 files |
+| Phase 03-hybrid-search-and-rerank-api P03 | 13min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,7 @@ Recent decisions affecting current work:
 - [Phase 03-hybrid-search-and-rerank-api]: Search uses SQLite active index records for BM25 path, Qdrant collection, and metadata version instead of Qdrant alias discovery.
 - [Phase 03-hybrid-search-and-rerank-api]: BGE-M3 runtime mode fails typed when endpoint configuration is missing or unavailable; deterministic embeddings are only selected by explicit provider setting.
 - [Phase 03-hybrid-search-and-rerank-api]: Reranker is required by default, with a configured degraded fused-results fallback only when reranker_required is false.
+- [Phase 03-hybrid-search-and-rerank-api]: Search responses now use query/results/warnings/metadata/score_semantics with retrieval_score and signal_scores, not legacy match_score/scores/pipeline names.
 
 ### Pending Todos
 

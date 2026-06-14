@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Local Data Contract and Ingestion** - Convert the real `伤寒论` workbook into stable, auditable local knowledge entries.
 - [x] **Phase 2: Index Lifecycle and Status** - Build Qdrant/BM25 indexes from local metadata and expose readiness/status.
-- [ ] **Phase 3: Hybrid Search and Rerank API** - Expose the patient search endpoint with BM25, vector recall, fusion, rerank, and evidence-rich results.
+- [x] **Phase 3: Hybrid Search and Rerank API** - Expose the patient search endpoint with BM25, vector recall, fusion, rerank, and evidence-rich results.
 - [ ] **Phase 4: Quality, Safety, and Performance Validation** - Lock in regression tests, score/safety boundaries, and MVP latency checks.
 - [ ] **Phase 5: Documentation and Demo Delivery** - Package OpenAPI docs, integration examples, Docker Compose, and a minimal reviewer demo flow.
 
@@ -69,7 +69,7 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md — Define and expose patient search request, result, error, and score semantics schemas
 - [x] 03-02-PLAN.md — Implement BM25/vector recall, hybrid fusion, and BGE rerank pipeline
-- [ ] 03-03-PLAN.md — Implement evidence projection, broad-query handling, and Java-friendly response contracts
+- [x] 03-03-PLAN.md — Implement evidence projection, broad-query handling, and Java-friendly response contracts
 
 ### Phase 4: Quality, Safety, and Performance Validation
 **Goal**: System behavior is regression-tested against real TCM query patterns, v1 safety boundaries, provider failures, and MVP latency expectations.
@@ -114,6 +114,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Local Data Contract and Ingestion | 3/3 | Complete | 2026-06-14 |
 | 2. Index Lifecycle and Status | 3/3 | Complete | 2026-06-14 |
-| 3. Hybrid Search and Rerank API | 2/3 | In Progress | - |
+| 3. Hybrid Search and Rerank API | 3/3 | Complete | 2026-06-14 |
 | 4. Quality, Safety, and Performance Validation | 0/2 | Not started | - |
 | 5. Documentation and Demo Delivery | 0/3 | Not started | - |

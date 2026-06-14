@@ -42,14 +42,14 @@ Requirements for the MVP retrieval-service demo and Java-backend integration. MV
 - [x] **PIPE-05**: System fuses BM25 and vector candidates using RRF or a configurable weighted score strategy.
 - [x] **PIPE-06**: System reranks the fused Top50 candidates using BGE-Reranker-v2-m3.
 - [x] **PIPE-07**: System returns Top10 by default and supports caller-provided `topk` within safe bounds.
-- [ ] **PIPE-08**: System handles sparse or broad queries gracefully by returning a ranked list and optional query-quality warning rather than fabricating certainty.
+- [x] **PIPE-08**: System handles sparse or broad queries gracefully by returning a ranked list and optional query-quality warning rather than fabricating certainty.
 
 ### Result Contract
 
-- [ ] **RES-01**: Each search result includes rank, retrieval score, `score_type`, `entry_id`, source metadata, formula raw text, formula mentions, formula code when known, and mapping status.
-- [ ] **RES-02**: Each search result includes evidence fields needed by doctors: main symptom, compound symptoms, detailed symptoms, aliases, tongue, pulse, source article, syndrome, disease name, treatment method, contraindications, and efficacy assessment when present.
+- [x] **RES-01**: Each search result includes rank, retrieval score, `score_type`, `entry_id`, source metadata, formula raw text, formula mentions, formula code when known, and mapping status.
+- [x] **RES-02**: Each search result includes evidence fields needed by doctors: main symptom, compound symptoms, detailed symptoms, aliases, tongue, pulse, source article, syndrome, disease name, treatment method, contraindications, and efficacy assessment when present.
 - [x] **RES-03**: API documentation states that retrieval scores are ranking/reference signals, not medical confidence, diagnosis probability, or prescription certainty.
-- [ ] **RES-04**: Search responses are designed for Java backend consumption and do not require the retrieval service to fetch prescription composition from a business formulary database.
+- [x] **RES-04**: Search responses are designed for Java backend consumption and do not require the retrieval service to fetch prescription composition from a business formulary database.
 - [x] **RES-05**: Error responses use stable JSON shapes with machine-readable codes and human-readable messages.
 
 ### Status and Operations
@@ -161,11 +161,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PIPE-05 | Phase 3 | Complete |
 | PIPE-06 | Phase 3 | Complete |
 | PIPE-07 | Phase 3 | Complete |
-| PIPE-08 | Phase 3 | Pending |
-| RES-01 | Phase 3 | Pending |
-| RES-02 | Phase 3 | Pending |
+| PIPE-08 | Phase 3 | Complete |
+| RES-01 | Phase 3 | Complete |
+| RES-02 | Phase 3 | Complete |
 | RES-03 | Phase 3 | Complete |
-| RES-04 | Phase 3 | Pending |
+| RES-04 | Phase 3 | Complete |
 | RES-05 | Phase 3 | Complete |
 | STAT-01 | Phase 2 | Verified |
 | STAT-02 | Phase 2 | Verified |
