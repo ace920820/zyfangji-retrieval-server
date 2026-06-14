@@ -15,6 +15,14 @@ from zyfangji_retrieval.search.embedding_factory import (
     EmbeddingProviderError,
     build_embedding_provider,
 )
+from zyfangji_retrieval.search.fusion import fuse_candidates
+from zyfangji_retrieval.search.rerank import (
+    BGERerankerProvider,
+    DeterministicRerankerProvider,
+    DisabledRerankerProvider,
+    RerankCandidate,
+    RerankerProviderError,
+)
 from zyfangji_retrieval.search.vector import VectorRetriever
 
 
@@ -295,3 +303,106 @@ def test_vector_recall_embeds_query_and_uses_active_collection_top50(tmp_path: P
     assert candidates[0].rank == 1
     assert candidates[0].score == 0.87
     assert candidates[0].payload == {"entry_id": "entry-1", "retrieval_text": "太阳病"}
+
+
+def test_rrf_fusion_preserves_signal_ranks_and_scores() -> None:
+    bm25_candidates = [
+        type("BM25", (), {"entry_id": "entry-1", "rank": 1, "score": 8.0})(),
+        type("BM25", (), {"entry_id": "entry-2", "rank": 2, "score": 4.0})(),
+    ]
+    vector_candidates = [
+        type(
+            "Vector",
+            (),
+            {"entry_id": "entry-2", "rank": 1, "score": 0.91, "payload": {"retrieval_text": "桂枝汤"}},
+        )(),
+        type(
+            "Vector",
+            (),
+            {"entry_id": "entry-3", "rank": 2, "score": 0.72, "payload": {"retrieval_text": "麻黄汤"}},
+        )(),
+    ]
+
+    fused = fuse_candidates(bm25_candidates, vector_candidates, strategy="rrf", rrf_k=60, limit=50)
+
+    assert [candidate.entry_id for candidate in fused] == ["entry-2", "entry-1", "entry-3"]
+    assert fused[0].bm25_rank == 2
+    assert fused[0].bm25_score == 4.0
+    assert fused[0].vector_rank == 1
+    assert fused[0].vector_score == 0.91
+    assert fused[0].fused_rank == 1
+    assert fused[0].fused_score == pytest.approx((1.0 / (60 + 2)) + (1.0 / (60 + 1)))
+    assert fused[0].payload == {"retrieval_text": "桂枝汤"}
+
+
+def test_fusion_rejects_unknown_strategy() -> None:
+    with pytest.raises(ValueError, match="unsupported fusion strategy"):
+        fuse_candidates([], [], strategy="unknown")
+
+
+class FakeFlagReranker:
+    constructed: list[tuple[str, bool]] = []
+
+    def __init__(self, model_id: str, use_fp16: bool) -> None:
+        self.constructed.append((model_id, use_fp16))
+
+    def compute_score(self, pairs: list[list[str]]) -> list[float]:
+        assert pairs == [["主症:\n太阳病", "条文 A"], ["主症:\n太阳病", "条文 B"]]
+        return [0.1, 0.9]
+
+
+def test_bge_reranker_provider_constructs_flag_reranker_and_sorts() -> None:
+    FakeFlagReranker.constructed = []
+
+    def fake_loader() -> type[FakeFlagReranker]:
+        return FakeFlagReranker
+
+    provider = BGERerankerProvider(reranker_loader=fake_loader)
+    candidates = [
+        RerankCandidate(entry_id="entry-a", text="条文 A"),
+        RerankCandidate(entry_id="entry-b", text="条文 B"),
+    ]
+
+    reranked = provider.rerank("主症:\n太阳病", candidates)
+
+    assert FakeFlagReranker.constructed == [("BAAI/bge-reranker-v2-m3", True)]
+    assert [candidate.entry_id for candidate in reranked] == ["entry-b", "entry-a"]
+    assert [candidate.rerank_score for candidate in reranked] == [0.9, 0.1]
+    assert provider.model_id == "BAAI/bge-reranker-v2-m3"
+
+
+def test_bge_reranker_provider_wraps_scoring_failures_without_patient_text() -> None:
+    class BrokenReranker:
+        def compute_score(self, pairs: list[list[str]]) -> list[float]:
+            raise RuntimeError("provider leaked low-level failure")
+
+    provider = BGERerankerProvider(reranker=BrokenReranker())
+
+    with pytest.raises(RerankerProviderError) as error:
+        provider.rerank("隐私患者文本", [RerankCandidate(entry_id="entry-a", text="证据文本")])
+
+    assert "reranker provider unavailable" in str(error.value)
+    assert "隐私患者文本" not in str(error.value)
+    assert "证据文本" not in str(error.value)
+
+
+def test_deterministic_reranker_orders_by_query_candidate_overlap() -> None:
+    provider = DeterministicRerankerProvider()
+    candidates = [
+        RerankCandidate(entry_id="entry-a", text="少阴病"),
+        RerankCandidate(entry_id="entry-b", text="太阳病 脉浮紧"),
+    ]
+
+    reranked = provider.rerank("太阳病 脉浮紧", candidates)
+
+    assert provider.model_id == "BAAI/bge-reranker-v2-m3"
+    assert [candidate.entry_id for candidate in reranked] == ["entry-b", "entry-a"]
+    assert reranked[0].rerank_score > reranked[1].rerank_score
+
+
+def test_disabled_reranker_raises_typed_error() -> None:
+    with pytest.raises(RerankerProviderError, match="reranker is disabled"):
+        DisabledRerankerProvider().rerank(
+            "太阳病",
+            [RerankCandidate(entry_id="entry-a", text="太阳病")],
+        )
