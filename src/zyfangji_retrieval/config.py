@@ -15,6 +15,7 @@ class AppSettings(BaseSettings):
     embedding_vector_size: int = 1024
     embedding_endpoint_url: str | None = None
     embedding_api_key: str | None = None
+    embedding_timeout_seconds: float = 30.0
     bm25_index_root: Path = Path("var/indexes/bm25")
     search_default_topk: int = 10
     search_max_topk: int = 50
