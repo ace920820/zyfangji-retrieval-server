@@ -1,3 +1,4 @@
+import json
 import sqlite3
 from pathlib import Path
 
@@ -129,5 +130,6 @@ def test_raw_records_are_queryable_by_source_row_and_preserve_all_source_fields(
         ).fetchone()
 
     assert raw_record is not None
-    assert "麻黄汤" in raw_record["raw_json"]
-    assert raw_record["raw_json"].count(":") == 22
+    payload = json.loads(raw_record["raw_json"])
+    assert payload["推荐方剂"] == "麻黄汤"
+    assert len(payload) == 22
