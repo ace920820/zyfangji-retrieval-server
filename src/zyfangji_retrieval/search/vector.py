@@ -16,6 +16,10 @@ class VectorRecallCandidate(BaseModel):
     payload: dict[str, Any] = Field(default_factory=dict)
 
 
+class VectorStoreError(RuntimeError):
+    pass
+
+
 class VectorRetriever:
     def __init__(
         self,
@@ -36,13 +40,16 @@ class VectorRetriever:
         recall_topk: int,
     ) -> list[VectorRecallCandidate]:
         query_vector = self._embedding_provider().embed_documents([query_text])[0]
-        response = self.qdrant_client.query_points(
-            collection_name=active.qdrant_collection,
-            query=query_vector,
-            limit=recall_topk,
-            with_payload=True,
-            with_vectors=False,
-        )
+        try:
+            response = self.qdrant_client.query_points(
+                collection_name=active.qdrant_collection,
+                query=query_vector,
+                limit=recall_topk,
+                with_payload=True,
+                with_vectors=False,
+            )
+        except Exception as exc:
+            raise VectorStoreError("vector store unavailable") from exc
         points = getattr(response, "points", response)
         candidates: list[VectorRecallCandidate] = []
         for rank, point in enumerate(points, start=1):

@@ -26,7 +26,7 @@ from zyfangji_retrieval.search.rerank import (
     RerankerProviderError,
 )
 from zyfangji_retrieval.search.service import SearchService, SearchServiceError
-from zyfangji_retrieval.search.vector import VectorRetriever
+from zyfangji_retrieval.search.vector import VectorRetriever, VectorStoreError
 
 
 def _active(tmp_path: Path) -> ActiveIndexRecord:
@@ -281,6 +281,11 @@ class FakeQdrantClient:
         return type("QueryResult", (), {"points": [point]})()
 
 
+class BrokenQdrantClient:
+    def query_points(self, **_kwargs: Any) -> Any:
+        raise RuntimeError("qdrant connection failed with patient text")
+
+
 def test_vector_recall_embeds_query_and_uses_active_collection_top50(tmp_path: Path) -> None:
     active = _active(tmp_path)
     embedding_provider = FakeEmbeddingProvider()
@@ -306,6 +311,19 @@ def test_vector_recall_embeds_query_and_uses_active_collection_top50(tmp_path: P
     assert candidates[0].rank == 1
     assert candidates[0].score == 0.87
     assert candidates[0].payload == {"entry_id": "entry-1", "retrieval_text": "太阳病"}
+
+
+def test_vector_recall_wraps_qdrant_failure_without_patient_text(tmp_path: Path) -> None:
+    retriever = VectorRetriever(
+        embedding_provider=FakeEmbeddingProvider(),
+        qdrant_client=BrokenQdrantClient(),
+    )
+
+    with pytest.raises(VectorStoreError) as error:
+        retriever.recall("隐私患者文本", active=_active(tmp_path), recall_topk=50)
+
+    assert "vector store unavailable" in str(error.value)
+    assert "隐私患者文本" not in str(error.value)
 
 
 def test_rrf_fusion_preserves_signal_ranks_and_scores() -> None:
@@ -466,14 +484,17 @@ class FakeBM25Retriever:
 
 
 class FakeVectorRetrieverForService:
-    def __init__(self, fail: bool = False) -> None:
+    def __init__(self, fail: bool = False, vector_store_fail: bool = False) -> None:
         self.fail = fail
+        self.vector_store_fail = vector_store_fail
         self.calls: list[tuple[str, ActiveIndexRecord, int]] = []
 
     def recall(self, query_text: str, active: ActiveIndexRecord, recall_topk: int) -> list[Any]:
         self.calls.append((query_text, active, recall_topk))
         if self.fail:
             raise EmbeddingProviderError("embedding provider unavailable")
+        if self.vector_store_fail:
+            raise VectorStoreError("vector store unavailable")
         return [
             type(
                 "Vector",
@@ -533,6 +554,7 @@ def _service(
     active: ActiveIndexRecord | None = None,
     reranker_required: bool = True,
     vector_fail: bool = False,
+    vector_store_fail: bool = False,
     reranker_fail: bool = False,
 ) -> tuple[SearchService, FakeIndexStore, FakeMetadataStore, FakeBM25Retriever, FakeVectorRetrieverForService]:
     active_record = active if active is not None else _active(tmp_path)
@@ -544,7 +566,10 @@ def _service(
         ]
     )
     bm25_retriever = FakeBM25Retriever()
-    vector_retriever = FakeVectorRetrieverForService(fail=vector_fail)
+    vector_retriever = FakeVectorRetrieverForService(
+        fail=vector_fail,
+        vector_store_fail=vector_store_fail,
+    )
     service = SearchService(
         settings=AppSettings(
             recall_topk=50,
@@ -609,6 +634,17 @@ def test_search_service_maps_embedding_failure_to_typed_error(tmp_path: Path) ->
         service.search(PatientSearchRequest(main_symptom="太阳病"))
 
     assert error.value.code == "embedding_provider_unavailable"
+    assert "太阳病" not in error.value.message
+
+
+def test_search_service_maps_vector_store_failure_to_typed_error(tmp_path: Path) -> None:
+    service, *_ = _service(tmp_path, vector_store_fail=True)
+
+    with pytest.raises(SearchServiceError) as error:
+        service.search(PatientSearchRequest(main_symptom="太阳病"))
+
+    assert error.value.code == "vector_store_unavailable"
+    assert error.value.details == {"vector_store": "qdrant"}
     assert "太阳病" not in error.value.message
 
 

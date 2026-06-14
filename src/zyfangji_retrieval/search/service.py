@@ -23,7 +23,7 @@ from zyfangji_retrieval.search.rerank import (
     RerankerProvider,
     RerankerProviderError,
 )
-from zyfangji_retrieval.search.vector import VectorRetriever
+from zyfangji_retrieval.search.vector import VectorRetriever, VectorStoreError
 
 
 class SearchServiceError(RuntimeError):
@@ -82,6 +82,12 @@ class SearchService:
                     "provider": self.settings.embedding_provider,
                     "model_id": self.settings.embedding_model_id,
                 },
+            ) from exc
+        except VectorStoreError as exc:
+            raise SearchServiceError(
+                code="vector_store_unavailable",
+                message="Vector store unavailable.",
+                details={"vector_store": "qdrant"},
             ) from exc
 
         fused_candidates = fuse_candidates(
