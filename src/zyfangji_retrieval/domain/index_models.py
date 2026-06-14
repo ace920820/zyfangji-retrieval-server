@@ -41,6 +41,7 @@ class ActiveIndexRecord(BaseModel):
     qdrant_alias: str
     bm25_path: str
     updated_at: datetime
+    activated_at: datetime | None = None
     entry_count: int | None = None
     vector_count: int | None = None
     bm25_doc_count: int | None = None

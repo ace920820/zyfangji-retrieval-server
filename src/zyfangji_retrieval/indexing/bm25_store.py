@@ -131,8 +131,6 @@ class BM25IndexStore:
             "indptr.csc.index.npy",
             "vocab.index.json",
             "params.index.json",
-            "nonoccurrence_array.index.npy",
-            "corpus.jsonl",
         }
         present = {path.name for path in version_dir.iterdir()}
         return required_suffixes.issubset(present)

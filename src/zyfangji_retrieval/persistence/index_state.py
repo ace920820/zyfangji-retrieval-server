@@ -307,6 +307,7 @@ class SQLiteIndexStateStore:
             qdrant_alias=row["qdrant_alias"],
             bm25_path=row["bm25_path"],
             updated_at=self._parse_datetime(row["updated_at"]),
+            activated_at=self._parse_datetime(row["activated_at"]),
             entry_count=row["entry_count"],
             vector_count=row["vector_count"],
             bm25_doc_count=row["bm25_doc_count"],
