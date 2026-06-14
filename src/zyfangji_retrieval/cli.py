@@ -46,7 +46,7 @@ def inspect_workbook(path: Path) -> None:
 @app.command("import-excel")
 def import_excel(
     path: Path,
-    dry_run: bool = typer.Option(True, "--dry-run/--no-dry-run"),
+    dry_run: bool = typer.Option(False, "--dry-run/--no-dry-run"),
     db_path: Path = typer.Option(Path("var/metadata/knowledge.db"), "--db-path"),
     jsonl_export: Path | None = typer.Option(None, "--jsonl-export"),
 ) -> None:
