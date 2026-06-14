@@ -3,6 +3,8 @@ from pydantic import ValidationError
 
 from zyfangji_retrieval.domain.ids import make_entry_id
 from zyfangji_retrieval.domain.models import FormulaMention, KnowledgeEntry
+from zyfangji_retrieval.ingestion.formulas import formula_mapping_status, parse_formula_mentions
+from zyfangji_retrieval.ingestion.retrieval_text import build_retrieval_text
 
 
 def test_make_entry_id_is_deterministic_with_shl_prefix() -> None:
@@ -107,3 +109,63 @@ def test_formula_mention_preserves_business_code_separate_from_formula_raw() -> 
             "raw_text": None,
         }
     ]
+
+
+def test_build_retrieval_text_emits_non_empty_sections_in_contract_order() -> None:
+    text = build_retrieval_text(
+        {
+            "主干部位": "头",
+            "分支部位": "项背",
+            "主病主症": "头痛",
+            "舌诊": "舌苔薄白",
+            "脉象": "浮紧脉",
+            "中医证型": "太阳伤寒证",
+        }
+    )
+
+    assert text == (
+        "部位:\n头\n项背\n\n"
+        "主症:\n头痛\n\n"
+        "舌诊:\n舌苔薄白\n\n"
+        "脉象:\n浮紧脉\n\n"
+        "证型:\n太阳伤寒证"
+    )
+
+
+def test_build_retrieval_text_excludes_display_only_evidence_fields() -> None:
+    text = build_retrieval_text(
+        {
+            "主病主症": "头痛",
+            "病理": "营卫不和",
+            "推荐方剂配伍中药与西医检查化验指标禁忌": "高热先看西医",
+            "疗效评定": "汗出热退",
+        }
+    )
+
+    assert text == "主症:\n头痛"
+    assert "病理" not in text
+    assert "高热先看西医" not in text
+    assert "汗出热退" not in text
+
+
+@pytest.mark.parametrize(
+    "formula_raw",
+    [
+        "桂枝汤或麻黄汤",
+        "桂枝汤；麻黄汤",
+        "桂枝汤/麻黄汤",
+        "1、桂枝汤 2、麻黄汤",
+    ],
+)
+def test_branchy_formula_text_returns_needs_review(formula_raw: str) -> None:
+    mentions = parse_formula_mentions(formula_raw)
+
+    assert formula_mapping_status(formula_raw, mentions) == "needs_review"
+    assert all(mention.needs_review for mention in mentions)
+
+
+def test_blank_formula_text_returns_missing() -> None:
+    mentions = parse_formula_mentions("  ")
+
+    assert mentions == []
+    assert formula_mapping_status("  ", mentions) == "missing"
