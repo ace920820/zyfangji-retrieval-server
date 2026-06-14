@@ -117,20 +117,35 @@ class QdrantVectorIndex:
 
     def activate_alias(self, index_version: str) -> str:
         collection_name = self.collection_name(index_version)
-        self.client.update_collection_aliases(
-            change_aliases_operations=[
+        operations: list[Any] = []
+        if self._alias_exists():
+            operations.append(
                 models.DeleteAliasOperation(
                     delete_alias=models.DeleteAlias(alias_name=self.alias_name)
-                ),
-                models.CreateAliasOperation(
-                    create_alias=models.CreateAlias(
-                        collection_name=collection_name,
-                        alias_name=self.alias_name,
-                    )
-                ),
-            ]
+                )
+            )
+        operations.append(
+            models.CreateAliasOperation(
+                create_alias=models.CreateAlias(
+                    collection_name=collection_name,
+                    alias_name=self.alias_name,
+                )
+            )
+        )
+        self.client.update_collection_aliases(
+            change_aliases_operations=operations
         )
         return self.alias_name
+
+    def _alias_exists(self) -> bool:
+        if not hasattr(self.client, "get_aliases"):
+            return False
+        try:
+            aliases_result = self.client.get_aliases()
+        except Exception:
+            return False
+        aliases = getattr(aliases_result, "aliases", [])
+        return any(getattr(alias, "alias_name", None) == self.alias_name for alias in aliases)
 
     def _collection_exists(self, collection_name: str) -> bool:
         if hasattr(self.client, "collection_exists"):

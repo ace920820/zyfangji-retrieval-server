@@ -11,7 +11,11 @@ from zyfangji_retrieval.domain.index_models import IndexValidationResult
 from zyfangji_retrieval.domain.index_models import ActiveIndexRecord, IndexBuildRecord
 from zyfangji_retrieval.domain.models import FormulaMention, KnowledgeEntry
 from zyfangji_retrieval.ingestion.importer import import_workbook_to_metadata
-from zyfangji_retrieval.indexing.lifecycle import IndexLifecycleError, IndexLifecycleService
+from zyfangji_retrieval.indexing.lifecycle import (
+    IndexLifecycleError,
+    IndexLifecycleService,
+    build_index_version,
+)
 from zyfangji_retrieval.persistence.index_state import SQLiteIndexStateStore
 
 
@@ -161,6 +165,13 @@ def _active_record(index_version: str) -> ActiveIndexRecord:
     )
 
 
+def test_build_index_version_uses_microsecond_precision() -> None:
+    index_version = build_index_version()
+
+    assert index_version.startswith("idx-")
+    assert len(index_version.removeprefix("idx-")) == 20
+
+
 def test_sqlite_index_state_store_creates_build_and_active_tables(tmp_path: Path) -> None:
     db_path = tmp_path / "metadata.db"
 
@@ -197,6 +208,16 @@ def test_sqlite_index_state_store_records_build_transitions(tmp_path: Path) -> N
     assert validated.bm25_doc_count == 2
     assert failed.status == "failed"
     assert failed.last_error == "provider timeout"
+
+
+def test_sqlite_index_state_store_rejects_duplicate_build_versions(tmp_path: Path) -> None:
+    store = SQLiteIndexStateStore(tmp_path / "metadata.db")
+    build = _build_record("idx-20260614121000123456")
+
+    store.start_build(build)
+
+    with pytest.raises(sqlite3.IntegrityError):
+        store.start_build(build)
 
 
 def test_sqlite_index_state_store_activate_stores_single_active_row(tmp_path: Path) -> None:

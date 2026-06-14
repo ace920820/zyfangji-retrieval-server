@@ -12,6 +12,7 @@ class FakeQdrantClient:
         self.collections: dict[str, dict[str, Any]] = {}
         self.upserts: list[tuple[str, list[Any]]] = []
         self.alias_actions: list[Any] = []
+        self.aliases: set[str] = set()
 
     def collection_exists(self, collection_name: str) -> bool:
         return collection_name in self.collections
@@ -35,6 +36,21 @@ class FakeQdrantClient:
 
     def update_collection_aliases(self, change_aliases_operations: list[Any]) -> None:
         self.alias_actions.extend(change_aliases_operations)
+        for operation in change_aliases_operations:
+            if hasattr(operation, "delete_alias"):
+                self.aliases.discard(operation.delete_alias.alias_name)
+            if hasattr(operation, "create_alias"):
+                self.aliases.add(operation.create_alias.alias_name)
+
+    def get_aliases(self) -> Any:
+        class AliasesResult:
+            def __init__(self, aliases: set[str]) -> None:
+                self.aliases = [
+                    type("Alias", (), {"alias_name": alias_name})()
+                    for alias_name in aliases
+                ]
+
+        return AliasesResult(self.aliases)
 
 
 def _entry() -> KnowledgeEntry:
@@ -146,3 +162,37 @@ def test_repository_uses_fake_client_without_network_service() -> None:
     assert alias == "zyfangji_entries_active"
     assert client.alias_actions
     assert client.collections[collection_name]["points"][0].payload["entry_id"] == "shl_test_0001"
+
+
+def test_activate_alias_skips_delete_when_alias_is_missing() -> None:
+    client = FakeQdrantClient()
+    store = QdrantVectorIndex(
+        client=client,
+        collection_prefix="zyfangji_entries",
+        alias_name="zyfangji_entries_active",
+        vector_size=4,
+    )
+    store.create_collection("idx-20260614090000")
+
+    store.activate_alias("idx-20260614090000")
+
+    assert len(client.alias_actions) == 1
+    assert hasattr(client.alias_actions[0], "create_alias")
+
+
+def test_activate_alias_deletes_existing_alias_before_create() -> None:
+    client = FakeQdrantClient()
+    client.aliases.add("zyfangji_entries_active")
+    store = QdrantVectorIndex(
+        client=client,
+        collection_prefix="zyfangji_entries",
+        alias_name="zyfangji_entries_active",
+        vector_size=4,
+    )
+    store.create_collection("idx-20260614090000")
+
+    store.activate_alias("idx-20260614090000")
+
+    assert len(client.alias_actions) == 2
+    assert hasattr(client.alias_actions[0], "delete_alias")
+    assert hasattr(client.alias_actions[1], "create_alias")

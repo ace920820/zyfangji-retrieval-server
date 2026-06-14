@@ -80,7 +80,7 @@ class SQLiteIndexStateStore:
             with connection:
                 connection.execute(
                     """
-                    insert or replace into index_builds (
+                    insert into index_builds (
                         index_version,
                         metadata_version,
                         status,

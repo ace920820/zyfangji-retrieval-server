@@ -14,7 +14,7 @@ class IndexLifecycleError(RuntimeError):
 
 
 def build_index_version(prefix: str = "idx") -> str:
-    return f"{prefix}-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
+    return f"{prefix}-{datetime.now(UTC).strftime('%Y%m%d%H%M%S%f')}"
 
 
 class IndexLifecycleService:
