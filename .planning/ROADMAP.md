@@ -67,9 +67,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: Define and expose patient search request, result, error, and score semantics schemas
-- [ ] 03-02: Implement BM25/vector recall, hybrid fusion, and BGE rerank pipeline
-- [ ] 03-03: Implement evidence projection, broad-query handling, and Java-friendly response contracts
+- [ ] 03-01-PLAN.md — Define and expose patient search request, result, error, and score semantics schemas
+- [ ] 03-02-PLAN.md — Implement BM25/vector recall, hybrid fusion, and BGE rerank pipeline
+- [ ] 03-03-PLAN.md — Implement evidence projection, broad-query handling, and Java-friendly response contracts
 
 ### Phase 4: Quality, Safety, and Performance Validation
 **Goal**: System behavior is regression-tested against real TCM query patterns, v1 safety boundaries, provider failures, and MVP latency expectations.
