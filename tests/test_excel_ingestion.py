@@ -2,13 +2,17 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from typer.testing import CliRunner
 
+from zyfangji_retrieval.cli import app
 from zyfangji_retrieval.ingestion.excel_reader import read_shanghanlun_workbook
 from zyfangji_retrieval.ingestion.mapper import map_row_to_entry, validate_source_row
+from zyfangji_retrieval.ingestion.reports import ImportReport, build_import_report
 from zyfangji_retrieval.ingestion.retrieval_text import SOURCE_HEADERS
 
 
 SAMPLE_WORKBOOK = Path("data/伤寒论原文 病症信息对应表（内容齐全 1 稿）.xlsx")
+runner = CliRunner()
 
 
 def _write_workbook(path: Path, headers: list[str], rows: list[list[str]]) -> None:
@@ -113,3 +117,71 @@ def test_missing_formula_raw_skips_row_with_issue_code() -> None:
 
     assert map_row_to_entry(missing_formula_row) is None
     assert [issue.code for issue in issues] == ["missing_formula_raw"]
+
+
+def test_import_report_json_contains_required_counts() -> None:
+    workbook = read_shanghanlun_workbook(SAMPLE_WORKBOOK)
+    entries = [entry for row in workbook.rows[:3] if (entry := map_row_to_entry(row))]
+    report = build_import_report(workbook, entries, [], index_version="test-index")
+    payload = report.model_dump()
+
+    assert isinstance(report, ImportReport)
+    assert {
+        "total_rows",
+        "valid_rows",
+        "skipped_rows",
+        "warning_count",
+        "failed_rows",
+        "indexed_count",
+        "index_version",
+    } <= payload.keys()
+    assert payload["indexed_count"] == 3
+    assert payload["index_version"] == "test-index"
+
+
+def test_inspect_workbook_cli_prints_shape_summary() -> None:
+    result = runner.invoke(app, ["inspect-workbook", str(SAMPLE_WORKBOOK)])
+
+    assert result.exit_code == 0
+    assert str(SAMPLE_WORKBOOK) in result.output
+    assert "Header count: 22" in result.output
+    assert "Row count:" in result.output
+
+
+def test_import_excel_dry_run_prints_report_without_persistence_files(tmp_path: Path) -> None:
+    result = runner.invoke(
+        app,
+        ["import-excel", str(SAMPLE_WORKBOOK), "--dry-run"],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert '"total_rows"' in result.output
+    assert '"indexed_count"' in result.output
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_formula_ambiguity_warning_is_counted_in_report() -> None:
+    workbook = read_shanghanlun_workbook(SAMPLE_WORKBOOK)
+    source = workbook.rows[0]
+    raw_record = dict(source.raw_record)
+    raw_record["推荐方剂"] = "桂枝汤或麻黄汤"
+    ambiguous_row = type(source)(
+        source_sheet=source.source_sheet,
+        source_row=2000,
+        raw_record=raw_record,
+    )
+
+    entry = map_row_to_entry(ambiguous_row)
+    issues = validate_source_row(ambiguous_row)
+    report = build_import_report(
+        workbook,
+        [entry] if entry is not None else [],
+        issues,
+        index_version="test-index",
+    )
+
+    assert entry is not None
+    assert entry.formula_mapping_status == "needs_review"
+    assert [issue.code for issue in issues] == ["formula_needs_review"]
+    assert report.warning_count == 1
