@@ -37,10 +37,10 @@ Requirements for the MVP retrieval-service demo and Java-backend integration. MV
 
 - [x] **PIPE-01**: System exposes a stateless search endpoint for patient presentation data, including main symptom, symptom list, tongue, pulse, syndrome, and `topk`.
 - [x] **PIPE-02**: System constructs a normalized query text from structured patient fields using field labels and weighting-friendly structure.
-- [ ] **PIPE-03**: System performs BM25 keyword recall and returns up to Top50 candidates.
-- [ ] **PIPE-04**: System performs BGE-M3 vector recall from Qdrant and returns up to Top50 candidates.
-- [ ] **PIPE-05**: System fuses BM25 and vector candidates using RRF or a configurable weighted score strategy.
-- [ ] **PIPE-06**: System reranks the fused Top50 candidates using BGE-Reranker-v2-m3.
+- [x] **PIPE-03**: System performs BM25 keyword recall and returns up to Top50 candidates.
+- [x] **PIPE-04**: System performs BGE-M3 vector recall from Qdrant and returns up to Top50 candidates.
+- [x] **PIPE-05**: System fuses BM25 and vector candidates using RRF or a configurable weighted score strategy.
+- [x] **PIPE-06**: System reranks the fused Top50 candidates using BGE-Reranker-v2-m3.
 - [x] **PIPE-07**: System returns Top10 by default and supports caller-provided `topk` within safe bounds.
 - [ ] **PIPE-08**: System handles sparse or broad queries gracefully by returning a ranked list and optional query-quality warning rather than fabricating certainty.
 
@@ -156,10 +156,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IDX-06 | Phase 2 | Verified |
 | PIPE-01 | Phase 3 | Complete |
 | PIPE-02 | Phase 3 | Complete |
-| PIPE-03 | Phase 3 | Pending |
-| PIPE-04 | Phase 3 | Pending |
-| PIPE-05 | Phase 3 | Pending |
-| PIPE-06 | Phase 3 | Pending |
+| PIPE-03 | Phase 3 | Complete |
+| PIPE-04 | Phase 3 | Complete |
+| PIPE-05 | Phase 3 | Complete |
+| PIPE-06 | Phase 3 | Complete |
 | PIPE-07 | Phase 3 | Complete |
 | PIPE-08 | Phase 3 | Pending |
 | RES-01 | Phase 3 | Pending |
