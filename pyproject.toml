@@ -1,0 +1,29 @@
+[project]
+name = "zyfangji-retrieval"
+version = "0.1.0"
+description = "TCM formula retrieval service"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pydantic==2.13.4",
+    "pandas==3.0.3",
+    "openpyxl==3.1.5",
+    "typer==0.26.7",
+]
+
+[project.scripts]
+zyfangji-retrieval = "zyfangji_retrieval.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.0",
+    "ruff==0.15.17",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
