@@ -67,7 +67,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Define and expose patient search request, result, error, and score semantics schemas
+- [x] 03-01-PLAN.md — Define and expose patient search request, result, error, and score semantics schemas
 - [ ] 03-02-PLAN.md — Implement BM25/vector recall, hybrid fusion, and BGE rerank pipeline
 - [ ] 03-03-PLAN.md — Implement evidence projection, broad-query handling, and Java-friendly response contracts
 
@@ -114,6 +114,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Local Data Contract and Ingestion | 3/3 | Complete | 2026-06-14 |
 | 2. Index Lifecycle and Status | 3/3 | Complete | 2026-06-14 |
-| 3. Hybrid Search and Rerank API | 0/3 | Not started | - |
+| 3. Hybrid Search and Rerank API | 1/3 | In Progress | - |
 | 4. Quality, Safety, and Performance Validation | 0/2 | Not started | - |
 | 5. Documentation and Demo Delivery | 0/3 | Not started | - |

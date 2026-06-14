@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_execute
-stopped_at: Phase 3 planned and verified; ready to execute.
-last_updated: "2026-06-14T16:35:32.261Z"
-last_activity: 2026-06-14 -- Phase 03 planning complete
+status: executing
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-06-14T16:47:58.585Z"
+last_activity: 2026-06-14
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 14
-  completed_plans: 6
-  percent: 40
+  total_plans: 9
+  completed_plans: 7
+  percent: 78
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-14)
 
 **Core value:** 医生输入患者症状后，系统必须能稳定返回有典籍依据、排序合理、可回连业务方剂库的推荐方剂列表。
-**Current focus:** Phase 3: Hybrid Search and Rerank API
+**Current focus:** Phase 03 — hybrid-search-and-rerank-api
 
 ## Current Position
 
-Phase: 3 of 5 (Hybrid Search and Rerank API)
-Plan: 0 of 3 in current phase
+Phase: 03 (hybrid-search-and-rerank-api) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-06-14 -- Phase 03 planning complete
+Last activity: 2026-06-14
 
-Progress: [████░░░░░░] 40%
+Progress: [████████░░] 78%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: -
 - Total execution time: 0.0 hours
 
@@ -46,7 +46,7 @@ Progress: [████░░░░░░] 40%
 |-------|-------|-------|----------|
 | 1. Local Data Contract and Ingestion | 3/3 | - | - |
 | 2. Index Lifecycle and Status | 3/3 | - | - |
-| 3. Hybrid Search and Rerank API | 0/3 | - | - |
+| 3. Hybrid Search and Rerank API | 1/3 | 7min | 7min |
 | 4. Quality, Safety, and Performance Validation | 0/2 | - | - |
 | 5. Documentation and Demo Delivery | 0/3 | - | - |
 
@@ -56,6 +56,7 @@ Progress: [████░░░░░░] 40%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 03-hybrid-search-and-rerank-api P01 | 7min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,9 @@ Recent decisions affecting current work:
 - [Retrieval]: MVP includes BM25 recall, BGE-M3 vector recall, Hybrid Fusion, and BGE-Reranker-v2-m3 reranking.
 - [Roadmap]: Phase 1 starts with local data contract and ingestion because stable IDs, raw-record preservation, and retrieval text are prerequisites for indexing and search.
 - [Integration]: Java backend owns patient workflow and prescription composition joins; retrieval service returns formula identifiers, mapping status, and evidence.
+- [Phase 03-hybrid-search-and-rerank-api]: Runtime embedding defaults now target BGE-M3; deterministic embedding remains available only through explicit settings override.
+- [Phase 03-hybrid-search-and-rerank-api]: Search route returns validation failures under detail.error to preserve stable Java-facing error paths.
+- [Phase 03-hybrid-search-and-rerank-api]: The route exposes only a stateless POST /api/search contract; retrieval orchestration remains in later Phase 3 plans.
 
 ### Pending Todos
 
@@ -83,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-14
-Stopped at: Requirements, roadmap, and state adjusted to saved MVP document and user scope corrections.
+Last session: 2026-06-14T16:47:19.714Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None

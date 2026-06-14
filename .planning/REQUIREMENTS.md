@@ -35,22 +35,22 @@ Requirements for the MVP retrieval-service demo and Java-backend integration. MV
 
 ### Retrieval Pipeline
 
-- [ ] **PIPE-01**: System exposes a stateless search endpoint for patient presentation data, including main symptom, symptom list, tongue, pulse, syndrome, and `topk`.
-- [ ] **PIPE-02**: System constructs a normalized query text from structured patient fields using field labels and weighting-friendly structure.
+- [x] **PIPE-01**: System exposes a stateless search endpoint for patient presentation data, including main symptom, symptom list, tongue, pulse, syndrome, and `topk`.
+- [x] **PIPE-02**: System constructs a normalized query text from structured patient fields using field labels and weighting-friendly structure.
 - [ ] **PIPE-03**: System performs BM25 keyword recall and returns up to Top50 candidates.
 - [ ] **PIPE-04**: System performs BGE-M3 vector recall from Qdrant and returns up to Top50 candidates.
 - [ ] **PIPE-05**: System fuses BM25 and vector candidates using RRF or a configurable weighted score strategy.
 - [ ] **PIPE-06**: System reranks the fused Top50 candidates using BGE-Reranker-v2-m3.
-- [ ] **PIPE-07**: System returns Top10 by default and supports caller-provided `topk` within safe bounds.
+- [x] **PIPE-07**: System returns Top10 by default and supports caller-provided `topk` within safe bounds.
 - [ ] **PIPE-08**: System handles sparse or broad queries gracefully by returning a ranked list and optional query-quality warning rather than fabricating certainty.
 
 ### Result Contract
 
 - [ ] **RES-01**: Each search result includes rank, retrieval score, `score_type`, `entry_id`, source metadata, formula raw text, formula mentions, formula code when known, and mapping status.
 - [ ] **RES-02**: Each search result includes evidence fields needed by doctors: main symptom, compound symptoms, detailed symptoms, aliases, tongue, pulse, source article, syndrome, disease name, treatment method, contraindications, and efficacy assessment when present.
-- [ ] **RES-03**: API documentation states that retrieval scores are ranking/reference signals, not medical confidence, diagnosis probability, or prescription certainty.
+- [x] **RES-03**: API documentation states that retrieval scores are ranking/reference signals, not medical confidence, diagnosis probability, or prescription certainty.
 - [ ] **RES-04**: Search responses are designed for Java backend consumption and do not require the retrieval service to fetch prescription composition from a business formulary database.
-- [ ] **RES-05**: Error responses use stable JSON shapes with machine-readable codes and human-readable messages.
+- [x] **RES-05**: Error responses use stable JSON shapes with machine-readable codes and human-readable messages.
 
 ### Status and Operations
 
@@ -154,19 +154,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IDX-04 | Phase 2 | Verified |
 | IDX-05 | Phase 2 | Verified |
 | IDX-06 | Phase 2 | Verified |
-| PIPE-01 | Phase 3 | Pending |
-| PIPE-02 | Phase 3 | Pending |
+| PIPE-01 | Phase 3 | Complete |
+| PIPE-02 | Phase 3 | Complete |
 | PIPE-03 | Phase 3 | Pending |
 | PIPE-04 | Phase 3 | Pending |
 | PIPE-05 | Phase 3 | Pending |
 | PIPE-06 | Phase 3 | Pending |
-| PIPE-07 | Phase 3 | Pending |
+| PIPE-07 | Phase 3 | Complete |
 | PIPE-08 | Phase 3 | Pending |
 | RES-01 | Phase 3 | Pending |
 | RES-02 | Phase 3 | Pending |
-| RES-03 | Phase 3 | Pending |
+| RES-03 | Phase 3 | Complete |
 | RES-04 | Phase 3 | Pending |
-| RES-05 | Phase 3 | Pending |
+| RES-05 | Phase 3 | Complete |
 | STAT-01 | Phase 2 | Verified |
 | STAT-02 | Phase 2 | Verified |
 | STAT-03 | Phase 2 | Verified |
