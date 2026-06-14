@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-14)
 
 **Core value:** 医生输入患者症状后，系统必须能稳定返回有典籍依据、排序合理、可回连业务方剂库的推荐方剂列表。
-**Current focus:** Phase 01 — local-data-contract-and-ingestion
+**Current focus:** Phase 2: Index Lifecycle and Status
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
-Status: Executing Phase 01
+Phase: 2 of 5 (Index Lifecycle and Status)
+Plan: 0 of 3 in current phase
+Status: Ready to plan
 Last activity: 2026-06-14
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
@@ -44,12 +44,11 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Local Data Contract and Ingestion | 0/3 | - | - |
+| 1. Local Data Contract and Ingestion | 3/3 | - | - |
 | 2. Index Lifecycle and Status | 0/3 | - | - |
 | 3. Hybrid Search and Rerank API | 0/3 | - | - |
 | 4. Quality, Safety, and Performance Validation | 0/2 | - | - |
 | 5. Documentation and Demo Delivery | 0/3 | - | - |
-| 01 | 3 | - | - |
 
 **Recent Trend:**
 
