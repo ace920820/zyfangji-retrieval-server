@@ -6,6 +6,7 @@ from zyfangji_retrieval.domain.search_models import (
     PatientSearchRequest,
     SearchResponse,
 )
+from zyfangji_retrieval.search.query import build_patient_query
 
 
 def test_patient_search_request_defaults_topk_to_10() -> None:
@@ -75,3 +76,42 @@ def test_search_response_documents_score_semantics() -> None:
         "not medical confidence, diagnosis probability, or prescription certainty"
         in response.score_semantics
     )
+
+
+def test_build_patient_query_uses_labeled_sections_and_separate_symptom_lines() -> None:
+    query = build_patient_query(
+        PatientSearchRequest(
+            main_symptom="发热恶寒",
+            symptoms=["发热", "恶风"],
+            tongue="舌淡",
+            pulse="脉浮",
+            syndrome="太阳中风证",
+        )
+    )
+
+    assert query.terms_count == 6
+    assert query.text == (
+        "主症:\n发热恶寒\n\n"
+        "复合症:\n发热\n恶风\n\n"
+        "舌诊:\n舌淡\n\n"
+        "脉象:\n脉浮\n\n"
+        "证型:\n太阳中风证"
+    )
+
+
+def test_build_patient_query_emits_sparse_warning() -> None:
+    query = build_patient_query(PatientSearchRequest(main_symptom="发热恶寒"))
+
+    assert query.terms_count == 1
+    assert [warning.code for warning in query.warnings] == ["query_too_sparse"]
+    assert query.warnings[0].severity == "info"
+
+
+def test_build_patient_query_emits_broad_warning_for_short_one_token_query() -> None:
+    query = build_patient_query(PatientSearchRequest(main_symptom="寒"))
+
+    assert [warning.code for warning in query.warnings] == [
+        "query_too_sparse",
+        "query_broad",
+    ]
+    assert all(warning.severity == "info" for warning in query.warnings)
