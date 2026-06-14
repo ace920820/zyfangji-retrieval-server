@@ -243,9 +243,12 @@ def test_phase_2_api_adds_only_read_only_status_routes(tmp_path: Path) -> None:
     assert "/health/live" in paths
     assert "/health/ready" in paths
     assert "/status" in paths
+    assert "/api/search" in paths
     assert ("/index" "-rebuild") not in paths
     assert "/import" not in paths
-    assert ("/se" "arch") not in paths
     assert not any(("hy" "brid") in path for path in paths)
     assert not any("rerank" in path for path in paths)
-    assert all(method in {"GET", "HEAD"} for _path, method in routes)
+    assert all(
+        method in {"GET", "HEAD"} or (path == "/api/search" and method == "POST")
+        for path, method in routes
+    )

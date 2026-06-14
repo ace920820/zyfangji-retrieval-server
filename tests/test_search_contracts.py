@@ -1,6 +1,8 @@
 import pytest
+from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
+from zyfangji_retrieval.api.app import create_app
 from zyfangji_retrieval.domain.search_models import (
     EvidenceFields,
     PatientSearchRequest,
@@ -115,3 +117,59 @@ def test_build_patient_query_emits_broad_warning_for_short_one_token_query() -> 
         "query_broad",
     ]
     assert all(warning.severity == "info" for warning in query.warnings)
+
+
+def test_search_route_is_registered() -> None:
+    app = create_app()
+    routes = {route.path for route in app.routes if hasattr(route, "methods")}
+
+    assert "/api/search" in routes
+
+
+def test_search_route_returns_unavailable_error_without_service() -> None:
+    client = TestClient(create_app())
+
+    response = client.post("/api/search", json={"main_symptom": "发热恶寒"})
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": {
+            "error": {
+                "code": "search_service_unavailable",
+                "message": "Search service is not configured.",
+                "details": {},
+            }
+        }
+    }
+
+
+def test_search_route_validation_error_uses_stable_error_envelope() -> None:
+    client = TestClient(create_app())
+
+    response = client.post("/api/search", json={"main_symptom": "发热", "topk": 51})
+
+    payload = response.json()
+    assert response.status_code == 422
+    assert payload["detail"]["error"]["code"] == "validation_error"
+    assert payload["detail"]["error"]["message"] == "Request validation failed."
+    assert "traceback" not in str(payload).lower()
+
+
+class _FakeSearchService:
+    def search(self, request: PatientSearchRequest) -> SearchResponse:
+        return SearchResponse(
+            query_text=f"主症:\n{request.main_symptom}",
+            results=[],
+            warnings=[],
+        )
+
+
+def test_search_route_calls_attached_search_service() -> None:
+    app = create_app()
+    app.state.search_service = _FakeSearchService()
+    client = TestClient(app)
+
+    response = client.post("/api/search", json={"main_symptom": "发热恶寒"})
+
+    assert response.status_code == 200
+    assert response.json()["query_text"] == "主症:\n发热恶寒"
