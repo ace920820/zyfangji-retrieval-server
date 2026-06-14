@@ -10,6 +10,7 @@ from zyfangji_retrieval.ingestion.importer import (
 )
 from zyfangji_retrieval.ingestion.mapper import map_row_to_entry, validate_source_row
 from zyfangji_retrieval.ingestion.reports import ImportReport, RowIssue, build_import_report
+from zyfangji_retrieval.persistence.jsonl import export_entries_jsonl, load_entries_jsonl
 from zyfangji_retrieval.persistence.sqlite import SQLiteMetadataStore
 
 
@@ -187,3 +188,95 @@ def test_local_persistence_import_does_not_require_customer_mysql() -> None:
     )
 
     assert all(term not in source for term in banned_terms)
+
+
+def test_jsonl_export_writes_utf8_lines_and_preserves_chinese(tmp_path: Path) -> None:
+    _, entry = _sample_row_and_entry()
+    export_path = tmp_path / "entries.jsonl"
+
+    export_entries_jsonl([entry], export_path)
+
+    content = export_path.read_text(encoding="utf-8")
+    assert content.count("\n") == 1
+    assert "麻黄汤" in content
+    assert json.loads(content)["entry_id"] == entry.entry_id
+
+
+def test_jsonl_load_round_trips_knowledge_entries(tmp_path: Path) -> None:
+    _, entry = _sample_row_and_entry()
+    export_path = tmp_path / "entries.jsonl"
+
+    export_entries_jsonl([entry], export_path)
+    loaded = load_entries_jsonl(export_path)
+
+    assert loaded == [entry]
+
+
+def test_import_excel_cli_persists_entries_and_prints_metadata_version(
+    tmp_path: Path,
+) -> None:
+    db_path = tmp_path / "metadata.db"
+    result = runner.invoke(
+        app,
+        [
+            "import-excel",
+            str(SAMPLE_WORKBOOK),
+            "--no-dry-run",
+            "--db-path",
+            str(db_path),
+        ],
+        catch_exceptions=False,
+    )
+
+    entries = load_entries_for_rebuild(db_path)
+
+    assert result.exit_code == 0
+    assert '"metadata_version": "local-v1"' in result.output
+    assert len(entries) > 1000
+
+
+def test_import_excel_cli_can_export_jsonl(tmp_path: Path) -> None:
+    db_path = tmp_path / "metadata.db"
+    export_path = tmp_path / "entries.jsonl"
+
+    result = runner.invoke(
+        app,
+        [
+            "import-excel",
+            str(SAMPLE_WORKBOOK),
+            "--no-dry-run",
+            "--db-path",
+            str(db_path),
+            "--jsonl-export",
+            str(export_path),
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert len(load_entries_jsonl(export_path)) > 1000
+
+
+def test_rebuild_source_cli_prints_local_metadata_count_without_workbook_parse(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    db_path = tmp_path / "metadata.db"
+    report = import_workbook_to_metadata(SAMPLE_WORKBOOK, db_path)
+
+    def fail_if_called(path: Path) -> object:
+        raise AssertionError(f"unexpected workbook parse: {path}")
+
+    monkeypatch.setattr("zyfangji_retrieval.cli.read_shanghanlun_workbook", fail_if_called)
+
+    result = runner.invoke(
+        app,
+        ["rebuild-source", "--db-path", str(db_path)],
+        catch_exceptions=False,
+    )
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["entry_count"] == report.indexed_count
+    assert payload["index_version"] == report.index_version
+    assert payload["source"] == "local_metadata"
