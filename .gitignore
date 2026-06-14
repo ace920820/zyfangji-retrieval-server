@@ -1,3 +1,8 @@
 # macOS AppleDouble/resource fork files, common on external drives.
 ._*
 
+# Python generated files.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
