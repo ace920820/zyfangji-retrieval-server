@@ -4,6 +4,10 @@ verified: 2026-06-14T17:43:16Z
 status: human_needed
 score: 5/5 must-haves verified
 overrides_applied: 0
+post_review_fix:
+  commit: "071c035"
+  change: "Qdrant/vector-store failures now map to vector_store_unavailable"
+  verification: "60 passed, 18 warnings"
 human_verification:
   - test: "Run /api/search against a live active index with configured BGE-M3 embedding endpoint, Qdrant, and BGE-Reranker-v2-m3 provider"
     expected: "POST /api/search returns ranked TopK formula results after BM25 Top50 recall, Qdrant vector Top50 recall, hybrid fusion, and reranking without provider/index errors"
@@ -75,7 +79,7 @@ human_verification:
 
 | Behavior | Command | Result | Status |
 |---|---|---|---|
-| Phase 3 contract, pipeline, and API tests | `PYTHONDONTWRITEBYTECODE=1 UV_PROJECT_ENVIRONMENT=/tmp/zyfangji-retrieval-venv uv run pytest tests/test_search_contracts.py tests/test_search_pipeline.py tests/test_search_api.py -q` | `49 passed, 12 warnings` | PASS |
+| Phase 3 contract, pipeline, API, and status tests | `PYTHONDONTWRITEBYTECODE=1 UV_PROJECT_ENVIRONMENT=/tmp/zyfangji-retrieval-venv uv run pytest tests/test_search_api.py tests/test_search_pipeline.py tests/test_search_contracts.py tests/test_status_api.py -q` | `60 passed, 18 warnings` after post-review fix `071c035` | PASS |
 | Artifact checks from PLAN frontmatter | `gsd-tools verify artifacts` for 03-01, 03-02, 03-03 | 13/13 artifacts passed | PASS |
 | Key-link checks from PLAN frontmatter | `gsd-tools verify key-links` plus manual review | 10/10 links verified after correcting regex false negatives | PASS |
 
