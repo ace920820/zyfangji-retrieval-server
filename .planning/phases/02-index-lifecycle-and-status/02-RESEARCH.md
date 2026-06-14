@@ -306,22 +306,25 @@ class DeterministicEmbeddingProvider:
 | A9 | Proposed test filenames and exact assertions are the right decomposition. | Testing Strategy | Planner may reorganize tests while preserving behavior coverage. |
 | A10 | Deferring Qdrant sparse vectors and keeping local BM25 is the right Phase 2 boundary. | Open Questions | If product leadership demands BGE-M3 sparse retrieval now, Phase 2 scope grows. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **BGE-M3 execution mode**
    - What we know: BGE-M3 model card lists 1024 dimension and dense/sparse/ColBERT support. [CITED: https://huggingface.co/BAAI/bge-m3]
    - What's unclear: local FlagEmbedding, ModelScope, or external HTTP provider has not been selected. [VERIFIED: STATE.md blocker]
    - Recommendation: Phase 2 implement provider boundary and deterministic provider first; make real provider config-driven. [ASSUMED]
+   - RESOLVED: Phase 2 plans only the provider boundary, deterministic provider, model/provider metadata, and configuration fields. A real local/API BGE-M3 provider remains config-driven and can be selected later without blocking Phase 2 execution.
 
 2. **Should Qdrant sparse vectors be used now?**
    - What we know: Qdrant supports sparse vectors and BGE-M3 can produce lexical weights. [CITED: Qdrant collections docs; CITED: BGE-M3 README]
    - What's unclear: Roadmap explicitly asks BM25 lexical indexing, not Qdrant sparse lexical retrieval, for Phase 2. [VERIFIED: IDX-06]
    - Recommendation: Use local BM25 in Phase 2; defer Qdrant sparse vectors unless Phase 3 quality demands it. [ASSUMED]
+   - RESOLVED: Phase 2 uses local `bm25s` + `jieba` for lexical indexing and dense Qdrant vectors only. Qdrant sparse vectors are deferred unless Phase 3 retrieval-quality work reopens the decision.
 
 3. **FastAPI app timing**
    - What we know: Phase 2 STAT requirements include endpoints, and current project has no FastAPI dependency. [VERIFIED: pyproject.toml, REQUIREMENTS.md]
    - What's unclear: Whether Phase 2 should add full app factory or only minimal status app. [ASSUMED]
    - Recommendation: Add minimal app factory and status router now; search router waits for Phase 3. [ASSUMED]
+   - RESOLVED: Phase 2 adds a minimal read-only FastAPI app factory with `/status`, `/health/live`, and `/health/ready`. `/health/ready` returns HTTP 503 when no active index exists or probes fail; `/status` always returns JSON with `ready=false` instead of failing. Search, hybrid fusion, reranker execution, and HTTP rebuild/import mutation wait for later phases.
 
 ## Environment Availability
 
