@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-06-14)
 
 **Core value:** 医生输入患者症状后，系统必须能稳定返回有典籍依据、排序合理、可回连业务方剂库的推荐方剂列表。
-**Current focus:** Phase 1: Data Contract and Canonical Ingestion
+**Current focus:** Phase 1: Local Data Contract and Ingestion
 
 ## Current Position
 
-Phase: 1 of 5 (Data Contract and Canonical Ingestion)
+Phase: 1 of 5 (Local Data Contract and Ingestion)
 Plan: 0 of 3 in current phase
 Status: Ready to plan
-Last activity: 2026-06-14 — Roadmap created from 45 v1 requirements with full phase traceability.
+Last activity: 2026-06-14 — Scope adjusted from saved requirements document: MVP uses local files, includes Hybrid Search + BGE rerank, and defers customer MySQL sync plus lightweight admin console.
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -27,10 +27,10 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Data Contract and Canonical Ingestion | 0/3 | - | - |
-| 2. Index Lifecycle and Admin Operations | 0/3 | - | - |
-| 3. Search API and Evidence Results | 0/3 | - | - |
-| 4. Retrieval Quality and Safety Validation | 0/2 | - | - |
+| 1. Local Data Contract and Ingestion | 0/3 | - | - |
+| 2. Index Lifecycle and Status | 0/3 | - | - |
+| 3. Hybrid Search and Rerank API | 0/3 | - | - |
+| 4. Quality, Safety, and Performance Validation | 0/2 | - | - |
 | 5. Documentation and Demo Delivery | 0/3 | - | - |
 
 **Recent Trend:**
@@ -46,10 +46,11 @@ Progress: [░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Roadmap]: v1 remains retrieval-only; chat, generative diagnosis, private LLM deployment, and prescription composition joins stay out of scope.
-- [Roadmap]: Phase 1 starts with data contract and canonical ingestion because stable IDs and evidence preservation are prerequisites for indexing and Java integration.
-- [Roadmap]: Java backend owns patient workflow and prescription composition joins; retrieval service returns formula identifiers, mapping status, and evidence.
-- [Roadmap]: Coarse granularity uses five phases to respect dependencies while keeping the two-to-three-week demo practical.
+- [Scope]: MVP reads local Excel / local structured files; do not assume customer MySQL schema or direct access.
+- [Scope]: Lightweight admin console, knowledge-library visual management, and customer MySQL sync are post-MVP capabilities.
+- [Retrieval]: MVP includes BM25 recall, BGE-M3 vector recall, Hybrid Fusion, and BGE-Reranker-v2-m3 reranking.
+- [Roadmap]: Phase 1 starts with local data contract and ingestion because stable IDs, raw-record preservation, and retrieval text are prerequisites for indexing and search.
+- [Integration]: Java backend owns patient workflow and prescription composition joins; retrieval service returns formula identifiers, mapping status, and evidence.
 
 ### Pending Todos
 
@@ -57,13 +58,13 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 2]: Final embedding provider, model dimensions, quota, latency, and region/account availability still need confirmation.
-- [Phase 3]: Business formulary mapping table may be unavailable; v1 must allow `formula_code: null` with explicit mapping status.
+- [Phase 2]: Final BGE-M3 / reranker execution mode, model hosting, API endpoint, model dimensions, quota, latency, and machine resources need confirmation.
+- [Phase 3]: Business formulary mapping table may be unavailable; v1 must allow `code: null` with explicit mapping status.
 - [Phase 4]: Representative doctor queries are needed to make regression tests meaningful beyond generic smoke queries.
-- [Phase 5]: Demo admin protection, provider-key handling, and privacy/logging expectations need confirmation before external exposure.
+- [Phase 5]: Demo provider-key handling and privacy/logging expectations need confirmation before external exposure.
 
 ## Session Continuity
 
 Last session: 2026-06-14
-Stopped at: Roadmap, state, and requirement traceability initialized.
+Stopped at: Requirements, roadmap, and state adjusted to saved MVP document and user scope corrections.
 Resume file: None
