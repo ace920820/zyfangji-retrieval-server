@@ -22,13 +22,22 @@ def _json_dump(value: Any) -> str:
 class SQLiteMetadataStore:
     def __init__(self, db_path: Path) -> None:
         self.db_path = db_path
+        db_exists = self.db_path.exists()
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        if not db_exists:
+            self._bootstrap_database()
         self.init_schema()
 
     def connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.db_path)
         connection.row_factory = sqlite3.Row
+        connection.execute("pragma journal_mode=delete").fetchone()
         return connection
+
+    def _bootstrap_database(self) -> None:
+        with self.connect() as connection:
+            # Some external volumes reject a full schema script as the first write.
+            connection.execute("create table if not exists __metadata_bootstrap (id integer)")
 
     def init_schema(self) -> None:
         with self.connect() as connection:
