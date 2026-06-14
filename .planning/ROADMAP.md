@@ -50,9 +50,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: Implement embedding provider, Qdrant repository, and vector payload indexing
-- [ ] 02-02: Implement BM25 indexing and versioned rebuild/activation flow
-- [ ] 02-03: Expose status, health/readiness, and import/rebuild failure visibility
+- [ ] 02-01-PLAN.md — Implement embedding provider, Qdrant repository, and vector payload indexing
+- [ ] 02-02-PLAN.md — Implement BM25 indexing and versioned rebuild/activation flow
+- [ ] 02-03-PLAN.md — Expose status, health/readiness, and import/rebuild failure visibility
 
 ### Phase 3: Hybrid Search and Rerank API
 **Goal**: Java backend can submit patient presentation data and receive TopK ranked formula results produced by BM25 recall, vector recall, hybrid fusion, and BGE rerank.
