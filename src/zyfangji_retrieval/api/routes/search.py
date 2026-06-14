@@ -17,6 +17,13 @@ class SearchService(Protocol):
 
 router = APIRouter()
 
+SERVICE_UNAVAILABLE_CODES = {
+    "index_not_ready",
+    "vector_store_unavailable",
+    "embedding_provider_unavailable",
+    "reranker_unavailable",
+}
+
 
 def _get_search_service(request: Request) -> SearchService:
     service = getattr(request.app.state, "search_service", None)
@@ -47,11 +54,13 @@ def search(
     try:
         return service.search(request)
     except SearchServiceError as exc:
+        status_code = 503 if exc.code in SERVICE_UNAVAILABLE_CODES else 500
+        code = exc.code if exc.code in SERVICE_UNAVAILABLE_CODES else "search_internal_error"
         raise HTTPException(
-            status_code=503,
+            status_code=status_code,
             detail=SearchErrorEnvelope(
                 error=SearchError(
-                    code=exc.code,
+                    code=code,
                     message=exc.message,
                     details=exc.details,
                 )

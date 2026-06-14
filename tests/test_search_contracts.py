@@ -6,6 +6,7 @@ from zyfangji_retrieval.api.app import create_app
 from zyfangji_retrieval.domain.search_models import (
     EvidenceFields,
     PatientSearchRequest,
+    SearchQuery,
     SearchResponse,
 )
 from zyfangji_retrieval.search.query import build_patient_query
@@ -56,21 +57,17 @@ def test_patient_search_request_rejects_empty_patient_presentation(
 
 def test_evidence_fields_allows_nullable_formula_code() -> None:
     evidence = EvidenceFields(
-        entry_id="entry-1",
-        source_book="伤寒论",
-        source_sheet="Sheet1",
-        source_row=12,
-        formula_name="桂枝汤",
-        formula_code=None,
-        formula_mapping_status="unmapped",
+        main_symptom="发热",
+        source_article="第12条",
+        western_medicine_priority=None,
     )
 
-    assert evidence.formula_code is None
+    assert evidence.western_medicine_priority is None
 
 
 def test_search_response_documents_score_semantics() -> None:
     response = SearchResponse(
-        query_text="主症: 发热",
+        query=SearchQuery(text="主症: 发热"),
         results=[],
         warnings=[],
     )
@@ -128,7 +125,9 @@ def test_search_route_is_registered() -> None:
 
 
 def test_search_route_returns_unavailable_error_without_service() -> None:
-    client = TestClient(create_app())
+    app = create_app()
+    del app.state.search_service
+    client = TestClient(app)
 
     response = client.post("/api/search", json={"main_symptom": "发热恶寒"})
 
@@ -159,7 +158,7 @@ def test_search_route_validation_error_uses_stable_error_envelope() -> None:
 class _FakeSearchService:
     def search(self, request: PatientSearchRequest) -> SearchResponse:
         return SearchResponse(
-            query_text=f"主症:\n{request.main_symptom}",
+            query=SearchQuery(text=f"主症:\n{request.main_symptom}"),
             results=[],
             warnings=[],
         )
@@ -173,7 +172,7 @@ def test_search_route_calls_attached_search_service() -> None:
     response = client.post("/api/search", json={"main_symptom": "发热恶寒"})
 
     assert response.status_code == 200
-    assert response.json()["query_text"] == "主症:\n发热恶寒"
+    assert response.json()["query"]["text"] == "主症:\n发热恶寒"
 
 
 class _FailingSearchService:

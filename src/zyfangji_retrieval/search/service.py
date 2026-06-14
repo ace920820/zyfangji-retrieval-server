@@ -77,8 +77,11 @@ class SearchService:
         except EmbeddingProviderError as exc:
             raise SearchServiceError(
                 code="embedding_provider_unavailable",
-                message="Embedding provider is unavailable.",
-                details={},
+                message="Embedding provider unavailable.",
+                details={
+                    "provider": self.settings.embedding_provider,
+                    "model_id": self.settings.embedding_model_id,
+                },
             ) from exc
 
         fused_candidates = fuse_candidates(

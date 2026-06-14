@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -16,8 +17,16 @@ class VectorRecallCandidate(BaseModel):
 
 
 class VectorRetriever:
-    def __init__(self, embedding_provider: EmbeddingProvider, qdrant_client: Any) -> None:
+    def __init__(
+        self,
+        embedding_provider: EmbeddingProvider | None = None,
+        qdrant_client: Any | None = None,
+        embedding_provider_factory: Callable[[], EmbeddingProvider] | None = None,
+    ) -> None:
+        if embedding_provider is None and embedding_provider_factory is None:
+            raise ValueError("embedding_provider or embedding_provider_factory is required")
         self.embedding_provider = embedding_provider
+        self.embedding_provider_factory = embedding_provider_factory
         self.qdrant_client = qdrant_client
 
     def recall(
@@ -26,7 +35,7 @@ class VectorRetriever:
         active: ActiveIndexRecord,
         recall_topk: int,
     ) -> list[VectorRecallCandidate]:
-        query_vector = self.embedding_provider.embed_documents([query_text])[0]
+        query_vector = self._embedding_provider().embed_documents([query_text])[0]
         response = self.qdrant_client.query_points(
             collection_name=active.qdrant_collection,
             query=query_vector,
@@ -50,3 +59,10 @@ class VectorRetriever:
                 )
             )
         return candidates
+
+    def _embedding_provider(self) -> EmbeddingProvider:
+        if self.embedding_provider is None:
+            if self.embedding_provider_factory is None:
+                raise ValueError("embedding provider is not configured")
+            self.embedding_provider = self.embedding_provider_factory()
+        return self.embedding_provider

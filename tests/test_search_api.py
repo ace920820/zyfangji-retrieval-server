@@ -1,17 +1,27 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+import importlib
 from typing import Any
 
 import pytest
+from fastapi.testclient import TestClient
 
 from zyfangji_retrieval.config import AppSettings
 from zyfangji_retrieval.domain.index_models import ActiveIndexRecord
 from zyfangji_retrieval.domain.models import FormulaMention, KnowledgeEntry
 from zyfangji_retrieval.domain.search_models import PatientSearchRequest
 from zyfangji_retrieval.indexing.embeddings import EmbeddingProviderError
-from zyfangji_retrieval.search.rerank import RerankCandidate, RerankerProviderError
+from zyfangji_retrieval.search.embedding_factory import build_embedding_provider
+from zyfangji_retrieval.search.rerank import (
+    BGERerankerProvider,
+    DeterministicRerankerProvider,
+    RerankCandidate,
+    RerankerProviderError,
+)
 from zyfangji_retrieval.search.service import SearchService
+
+app_module = importlib.import_module("zyfangji_retrieval.api.app")
 
 
 def _active() -> ActiveIndexRecord:
@@ -242,3 +252,78 @@ def test_formula_code_uses_first_non_empty_mention_code() -> None:
     response = _service().search(PatientSearchRequest(main_symptom="发热恶寒", topk=2))
 
     assert [result.formula_code for result in response.results] == ["F-MHT", None]
+
+
+def test_create_app_attaches_lazy_search_service() -> None:
+    app = app_module.create_app(AppSettings(embedding_provider="bge_m3", embedding_endpoint_url=None))
+
+    assert app.state.search_service is not None
+
+
+def test_embedding_provider_deterministic_fallback_is_explicit() -> None:
+    provider = build_embedding_provider(
+        AppSettings(embedding_provider="deterministic", embedding_vector_size=4)
+    )
+
+    assert provider.provider_id == "deterministic"
+
+
+def test_reranker_provider_bge_and_deterministic_are_explicit() -> None:
+    bge = app_module.build_reranker_provider(AppSettings(reranker_provider="bge"))
+    deterministic = app_module.build_reranker_provider(
+        AppSettings(reranker_provider="deterministic")
+    )
+
+    assert isinstance(bge, BGERerankerProvider)
+    assert isinstance(deterministic, DeterministicRerankerProvider)
+
+
+def test_missing_bge_endpoint_keeps_health_status_callable_and_search_fails_typed(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeIndexStateStore:
+        def __init__(self, db_path) -> None:
+            self.db_path = db_path
+
+        def get_active(self) -> ActiveIndexRecord:
+            return _active()
+
+    class FakeMetadataStore:
+        def __init__(self, db_path) -> None:
+            self.db_path = db_path
+
+        def load_entries(self, index_version: str | None = None) -> list[KnowledgeEntry]:
+            return [_entry("entry-1", "麻黄汤", "F-MHT")]
+
+    class FakeBM25Retriever:
+        def recall(self, query_text: str, active: ActiveIndexRecord, recall_topk: int) -> list[Any]:
+            return [type("BM25", (), {"entry_id": "entry-1", "rank": 1, "score": 8.0})()]
+
+    class FakeQdrantClient:
+        def __init__(self, url: str) -> None:
+            self.url = url
+
+    monkeypatch.setattr(app_module, "SQLiteIndexStateStore", FakeIndexStateStore)
+    monkeypatch.setattr(app_module, "SQLiteMetadataStore", FakeMetadataStore)
+    monkeypatch.setattr(app_module, "BM25Retriever", FakeBM25Retriever)
+    monkeypatch.setattr(app_module, "QdrantClient", FakeQdrantClient)
+
+    app = app_module.create_app(
+        AppSettings(
+            db_path=tmp_path / "metadata.db",
+            embedding_provider="bge_m3",
+            embedding_endpoint_url=None,
+        )
+    )
+    client = TestClient(app)
+
+    assert client.get("/health/live").status_code == 200
+    assert client.get("/health/ready").status_code in {200, 503}
+    assert client.get("/status").status_code in {200, 503}
+
+    response = client.post("/api/search", json={"main_symptom": "发热恶寒"})
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["error"]["code"] == "embedding_provider_unavailable"
+    assert response.json()["detail"]["error"]["message"] == "Embedding provider unavailable."

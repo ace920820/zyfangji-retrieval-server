@@ -6,3 +6,6 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+
+# Local runtime metadata/index artifacts.
+var/
