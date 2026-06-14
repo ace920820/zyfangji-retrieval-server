@@ -9,20 +9,20 @@ Requirements for the MVP retrieval-service demo and Java-backend integration. MV
 
 ### Data Contract
 
-- [ ] **DATA-01**: System defines a canonical knowledge-entry schema that separates internal `entry_id`, source `编码`, source reference, formula name, formula code, raw formula text, mapping status, and raw source record.
-- [ ] **DATA-02**: System preserves all 22 source columns from the `伤寒论` Excel sample as retrievable/displayable metadata.
-- [ ] **DATA-03**: System generates deterministic stable `entry_id` values for imported rows without relying on sparse Excel `编码` values.
-- [ ] **DATA-04**: System represents multi-formula or multi-syndrome `推荐方剂` rows without hiding ambiguity, using raw text plus structured formula mentions or `needs_review` status.
-- [ ] **DATA-05**: System distinguishes core searchable fields from display-only evidence fields so noisy long-form text does not dominate retrieval.
-- [ ] **DATA-06**: System defines `retrieval_text` using main part, sub part, main symptom, complex symptom, detail symptom, alias, tongue, pulse, and syndrome fields.
+- [x] **DATA-01**: System defines a canonical knowledge-entry schema that separates internal `entry_id`, source `编码`, source reference, formula name, formula code, raw formula text, mapping status, and raw source record.
+- [x] **DATA-02**: System preserves all 22 source columns from the `伤寒论` Excel sample as retrievable/displayable metadata.
+- [x] **DATA-03**: System generates deterministic stable `entry_id` values for imported rows without relying on sparse Excel `编码` values.
+- [x] **DATA-04**: System represents multi-formula or multi-syndrome `推荐方剂` rows without hiding ambiguity, using raw text plus structured formula mentions or `needs_review` status.
+- [x] **DATA-05**: System distinguishes core searchable fields from display-only evidence fields so noisy long-form text does not dominate retrieval.
+- [x] **DATA-06**: System defines `retrieval_text` using main part, sub part, main symptom, complex symptom, detail symptom, alias, tongue, pulse, and syndrome fields.
 
 ### Local Ingestion
 
-- [ ] **ING-01**: System imports the real `data/伤寒论原文 病症信息对应表（内容齐全 1 稿）.xlsx` workbook and skips title/header rows correctly.
-- [ ] **ING-02**: System reports total row count, valid row count, skipped row count, warning count, failed row details, indexed count, and index version after import.
-- [ ] **ING-03**: System validates required fields for searchable entries, including symptoms, formula text, source reference or source metadata, and evidence fields.
-- [ ] **ING-04**: System stores raw source records and normalized records in local metadata storage such as SQLite or JSONL so search results can be audited back to original rows.
-- [ ] **ING-05**: System can rebuild indexes from local metadata without requiring a customer MySQL connection.
+- [x] **ING-01**: System imports the real `data/伤寒论原文 病症信息对应表（内容齐全 1 稿）.xlsx` workbook and skips title/header rows correctly.
+- [x] **ING-02**: System reports total row count, valid row count, skipped row count, warning count, failed row details, indexed count, and index version after import.
+- [x] **ING-03**: System validates required fields for searchable entries, including symptoms, formula text, source reference or source metadata, and evidence fields.
+- [x] **ING-04**: System stores raw source records and normalized records in local metadata storage such as SQLite or JSONL so search results can be audited back to original rows.
+- [x] **ING-05**: System can rebuild indexes from local metadata without requiring a customer MySQL connection.
 
 ### Indexing
 
@@ -137,17 +137,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 1 | Pending |
-| DATA-02 | Phase 1 | Pending |
-| DATA-03 | Phase 1 | Pending |
-| DATA-04 | Phase 1 | Pending |
-| DATA-05 | Phase 1 | Pending |
-| DATA-06 | Phase 1 | Pending |
-| ING-01 | Phase 1 | Pending |
-| ING-02 | Phase 1 | Pending |
-| ING-03 | Phase 1 | Pending |
-| ING-04 | Phase 1 | Pending |
-| ING-05 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Verified |
+| DATA-02 | Phase 1 | Verified |
+| DATA-03 | Phase 1 | Verified |
+| DATA-04 | Phase 1 | Verified |
+| DATA-05 | Phase 1 | Verified |
+| DATA-06 | Phase 1 | Verified |
+| ING-01 | Phase 1 | Verified |
+| ING-02 | Phase 1 | Verified |
+| ING-03 | Phase 1 | Verified |
+| ING-04 | Phase 1 | Verified |
+| ING-05 | Phase 1 | Verified |
 | IDX-01 | Phase 2 | Pending |
 | IDX-02 | Phase 2 | Pending |
 | IDX-03 | Phase 2 | Pending |
@@ -196,4 +196,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-06-14*
-*Last updated: 2026-06-14 after scope adjustment from saved requirements document*
+*Last updated: 2026-06-14 after Phase 1 verification*

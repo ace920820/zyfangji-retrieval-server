@@ -33,9 +33,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Define canonical knowledge-entry, formula mapping, and retrieval-text contracts
-- [ ] 01-02-PLAN.md — Implement Excel ingestion, field mapping, and validation reports
-- [ ] 01-03-PLAN.md — Persist raw and normalized local metadata with deterministic IDs
+- [x] 01-01-PLAN.md — Define canonical knowledge-entry, formula mapping, and retrieval-text contracts
+- [x] 01-02-PLAN.md — Implement Excel ingestion, field mapping, and validation reports
+- [x] 01-03-PLAN.md — Persist raw and normalized local metadata with deterministic IDs
 
 ### Phase 2: Index Lifecycle and Status
 **Goal**: System can build, validate, activate, and inspect local Qdrant/BM25 indexes without relying on customer business databases.

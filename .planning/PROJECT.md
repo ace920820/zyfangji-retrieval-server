@@ -14,12 +14,12 @@
 
 ### Validated
 
-(None yet — ship to validate)
+- Phase 1 validated the local data contract and ingestion foundation: the system imports the real `伤寒论` Excel workbook, preserves all 22 source columns, creates deterministic `entry_id` values independent of sparse Excel `编码`, records formula ambiguity with `needs_review`, builds canonical `retrieval_text`, and persists versioned local metadata that can rebuild old and latest `index_version` snapshots without customer MySQL.
 
 ### Active
 
-- [ ] 从《伤寒论》Excel 样例中解析约 1248 条有效病症-方剂记录，并保留完整展示字段。
-- [ ] 将核心检索字段构造成 `retrieval_text`，支持 BM25 关键词召回和 BGE-M3 向量召回。
+- [x] 从《伤寒论》Excel 样例中解析约 1248 条有效病症-方剂记录，并保留完整展示字段。
+- [x] 将核心检索字段构造成 `retrieval_text`，支持后续 BM25 关键词召回和 BGE-M3 向量召回。
 - [ ] 实现 Hybrid Fusion，将 BM25 Top50 与向量 Top50 融合为候选集。
 - [ ] 使用 BGE-Reranker-v2-m3 对候选集重排，返回 Top10 或调用方指定的 topK 结果。
 - [ ] 提供本地文件导入接口或导入命令，支持从本地 Excel 构建元数据、Qdrant 向量索引和 BM25 索引。
@@ -67,11 +67,11 @@
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | 一期定位为检索服务而非对话系统 | 沟通中多次确认先返回匹配方剂列表，生成式对话后续加预算再做 | — Pending |
-| MVP 以本地文件为知识来源，不直连客户 MySQL | 客户尚未提供 MySQL 结构、访问方式和同步规则，先验证检索链路 | — Pending |
-| 以《伤寒论》Excel 为一期样例数据 | 当前数据完整、字段丰富，可快速验证效果 | — Pending |
+| MVP 以本地文件为知识来源，不直连客户 MySQL | 客户尚未提供 MySQL 结构、访问方式和同步规则，先验证检索链路 | Phase 1 confirmed |
+| 以《伤寒论》Excel 为一期样例数据 | 当前数据完整、字段丰富，可快速验证效果 | Phase 1 confirmed |
 | 后台管理系统放到 MVP 后 | 一期先交付检索闭环和接口文档，降低两到三周 demo 风险 | — Pending |
 | MVP 检索链路包含 Hybrid Search 与 Rerank | 需求文档明确要求 BM25 + BGE-M3 召回、融合、BGE-Reranker-v2-m3 重排 | — Pending |
-| 方剂 code/条目 ID 需要独立规范 | Excel `编码` 不完整，推荐方剂存在多方剂文本，不能直接作为稳定回连键 | — Pending |
+| 方剂 code/条目 ID 需要独立规范 | Excel `编码` 不完整，推荐方剂存在多方剂文本，不能直接作为稳定回连键 | Phase 1 confirmed |
 
 ## Evolution
 
@@ -91,4 +91,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-14 after initialization*
+*Last updated: 2026-06-14 after Phase 1 verification*
