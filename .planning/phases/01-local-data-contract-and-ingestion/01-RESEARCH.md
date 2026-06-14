@@ -321,22 +321,22 @@ Source: formula cells include semicolon branches, numbered branches, slash alter
 | A4 | Stable ID can include source row for v1. | Architecture Patterns | If users require IDs to survive row reordering, use content-only hashing plus duplicate collision handling. |
 | A5 | Warning signs and some failure modes are inferred from engineering practice. | Common Pitfalls | Tests may need adjustment once first implementation exists. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should `entry_id` survive row reordering across revised Excel files?** [ASSUMED]
+1. **Should `entry_id` survive row reordering across revised Excel files?** [RESOLVED]
    - What we know: It must be deterministic and independent of sparse `编码`. [VERIFIED: `.planning/REQUIREMENTS.md`]
-   - What's unclear: Whether row number is allowed in the hash for MVP. [ASSUMED]
-   - Recommendation: Use source row in v1 only if the import report also stores a content fingerprint; otherwise use content fingerprint plus duplicate suffixing. [ASSUMED]
+   - Resolution for Phase 1: include `source_row` in the v1 `entry_id` hash because the immediate MVP validates one fixed local workbook, and store a separate content fingerprint for future migration/reorder handling. [RESOLVED]
+   - Deferred: content-only IDs plus duplicate collision handling can be revisited when customers provide revised files or multi-book schemas. [RESOLVED]
 
-2. **How strict should valid-row criteria be for rows missing formula text?** [ASSUMED]
+2. **How strict should valid-row criteria be for rows missing formula text?** [RESOLVED]
    - What we know: 76 non-empty rows after the header have empty formula cells, while Phase 1 requires valid/skipped counts. [VERIFIED: direct `.xlsx` XML inspection, `.planning/ROADMAP.md`]
-   - What's unclear: Whether such rows should be skipped, stored as non-searchable, or stored as evidence-only. [ASSUMED]
-   - Recommendation: Store raw rows, count them as skipped/non-searchable, and include warning details. [ASSUMED]
+   - Resolution for Phase 1: preserve raw rows, skip them as searchable `KnowledgeEntry` records with row issue code `missing_formula_raw`, and include them in report skipped/failed details. [RESOLVED]
+   - Deferred: evidence-only records can be introduced after search/index requirements define how they should behave. [RESOLVED]
 
-3. **Does the business team already have a formula-code mapping table?** [ASSUMED]
+3. **Does the business team already have a formula-code mapping table?** [RESOLVED]
    - What we know: v1 can return missing formula code with mapping status, and Java backend owns formulary joins. [VERIFIED: `.planning/PROJECT.md`, `.planning/REQUIREMENTS.md`]
-   - What's unclear: Whether Phase 1 should accept an optional mapping file. [ASSUMED]
-   - Recommendation: Define the mapping schema now, implement import later unless a mapping file is provided. [ASSUMED]
+   - Resolution for Phase 1: define `FormulaMention.code: str | None = None` and mapping status now, but do not implement a mapping-file import because no mapping file has been provided. [RESOLVED]
+   - Deferred: customer formula-code mapping import belongs in a later phase or post-MVP data integration work. [RESOLVED]
 
 ## Environment Availability
 
