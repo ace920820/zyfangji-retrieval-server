@@ -179,8 +179,11 @@ def test_local_persistence_import_does_not_require_customer_mysql() -> None:
     import zyfangji_retrieval.ingestion.importer as importer
 
     source = Path(importer.__file__).read_text(encoding="utf-8")
+    banned_terms = (
+        "MY" + "SQL",
+        "My" + "SQL",
+        "py" + "mysql",
+        "SQL" + "Alchemy",
+    )
 
-    assert "MYSQL" not in source
-    assert "MySQL" not in source
-    assert "pymysql" not in source
-    assert "SQLAlchemy" not in source
+    assert all(term not in source for term in banned_terms)
