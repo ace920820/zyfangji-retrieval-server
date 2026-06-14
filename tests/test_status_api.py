@@ -2,8 +2,10 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+from fastapi.testclient import TestClient
 from typer.testing import CliRunner
 
+from zyfangji_retrieval.api.app import create_app
 from zyfangji_retrieval.cli import app
 from zyfangji_retrieval.config import AppSettings
 from zyfangji_retrieval.domain.index_models import ActiveIndexRecord, IndexBuildRecord
@@ -147,3 +149,103 @@ def test_index_status_cli_outputs_json_for_ready_and_not_ready_states(
     assert ready_payload["provider_id"] == "deterministic"
     assert ready_payload["model_id"] == "deterministic-bge-m3-compatible"
     assert ready_payload["reranker_status"] == "not_configured"
+
+
+def test_health_live_returns_ok_without_active_index(tmp_path: Path) -> None:
+    settings = _settings(tmp_path / "metadata.db")
+    client = TestClient(create_app(settings))
+
+    response = client.get("/health/live")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_status_endpoint_returns_index_status_fields(tmp_path: Path) -> None:
+    db_path = tmp_path / "metadata.db"
+    store = SQLiteIndexStateStore(db_path)
+    store.start_build(_build_record("idx-ready"))
+    store.mark_validated(
+        "idx-ready",
+        vector_count=2,
+        bm25_doc_count=2,
+        qdrant_collection="zyfangji_entries_idx-ready",
+        bm25_path="/tmp/bm25/idx-ready",
+    )
+    store.activate(_active_record("idx-ready"))
+    client = TestClient(create_app(_settings(db_path)))
+
+    response = client.get("/status")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["ready"] is True
+    assert payload["active_version"] == "idx-ready"
+    assert payload["indexed_count"] == 2
+    assert payload["provider_id"] == "deterministic"
+    assert payload["model_id"] == "deterministic-bge-m3-compatible"
+    assert payload["vector_store"] == "qdrant"
+    assert payload["retrieval_strategy"] == "bm25+dense"
+    assert payload["reranker_enabled"] is False
+    assert payload["reranker_model_id"] is None
+    assert payload["reranker_status"] == "not_configured"
+    assert payload["last_build_time"] is not None
+    assert payload["updated_at"] is not None
+    assert payload["last_error"] is None
+
+
+def test_health_ready_returns_503_when_no_active_index(tmp_path: Path) -> None:
+    client = TestClient(create_app(_settings(tmp_path / "metadata.db")))
+
+    response = client.get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["ready"] is False
+
+
+def test_health_ready_returns_503_when_active_counts_are_inconsistent(
+    tmp_path: Path,
+) -> None:
+    db_path = tmp_path / "metadata.db"
+    store = SQLiteIndexStateStore(db_path)
+    store.start_build(_build_record("idx-bad"))
+    active = _active_record("idx-bad").model_copy(update={"vector_count": 1})
+    store.activate(active)
+    client = TestClient(create_app(_settings(db_path)))
+
+    response = client.get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["ready"] is False
+
+
+def test_health_ready_returns_200_when_active_index_is_consistent(
+    tmp_path: Path,
+) -> None:
+    db_path = tmp_path / "metadata.db"
+    store = SQLiteIndexStateStore(db_path)
+    store.start_build(_build_record("idx-ready"))
+    store.activate(_active_record("idx-ready"))
+    client = TestClient(create_app(_settings(db_path)))
+
+    response = client.get("/health/ready")
+
+    assert response.status_code == 200
+    assert response.json()["ready"] is True
+    assert response.json()["active_version"] == "idx-ready"
+
+
+def test_phase_2_api_adds_only_read_only_status_routes(tmp_path: Path) -> None:
+    app = create_app(_settings(tmp_path / "metadata.db"))
+    routes = {(route.path, next(iter(route.methods))) for route in app.routes if hasattr(route, "methods")}
+    paths = {path for path, _method in routes}
+
+    assert "/health/live" in paths
+    assert "/health/ready" in paths
+    assert "/status" in paths
+    assert ("/index" "-rebuild") not in paths
+    assert "/import" not in paths
+    assert ("/se" "arch") not in paths
+    assert not any(("hy" "brid") in path for path in paths)
+    assert not any("rerank" in path for path in paths)
+    assert all(method in {"GET", "HEAD"} for _path, method in routes)
