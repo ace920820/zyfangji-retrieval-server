@@ -367,22 +367,19 @@ SearchResponse(
 | A2 | `POST /api/search` is the best endpoint shape. | Standard Stack | If Java backend requires a different path/method, route naming must be adjusted. |
 | A3 | Reranker failure behavior can be config-driven between fail-closed and degraded fused-result fallback. | Common Pitfalls | If BGE rerank is strictly mandatory for every result, fallback behavior must be disabled. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Real reranker provider availability**
    - What we know: Phase 3 requires BGE-Reranker-v2-m3 reranking; Phase 2 status reports reranker `not_configured`. [VERIFIED: .planning/ROADMAP.md]
-   - What's unclear: Whether the deployment will use local FlagEmbedding, a private provider API, or a deterministic/demo adapter.
-   - Recommendation: Plan the provider boundary and deterministic tests first, then add real provider configuration only if model runtime/API credentials are available.
+   - RESOLVED: Phase 3 will deliver a real local FlagEmbedding reranker adapter using `FlagEmbedding==1.4.0` and `FlagReranker("BAAI/bge-reranker-v2-m3", use_fp16=True)` behind the `RerankerProvider` boundary. Deterministic reranking remains only for tests and explicitly configured dev fallback; it is not the production/default Phase 3 success path.
 
 2. **TopK upper bound**
    - What we know: Default Top10 is required and caller `topk` must be bounded. [VERIFIED: .planning/ROADMAP.md]
-   - What's unclear: Whether max should be 20, 50, or configurable.
-   - Recommendation: Use `search_default_topk=10`, `search_max_topk=50`, `recall_topk=50` in settings.
+   - RESOLVED: Use `search_default_topk=10`, `search_max_topk=50`, and `recall_topk=50` in settings. `POST /api/search` defaults to Top10, rejects caller `topk > 50`, and recalls Top50 before fusion/rerank.
 
 3. **Exact response field naming for west-medicine-priority**
    - What we know: The 22 source headers include `中西先后（先看中医？先看西医？）`, and safety context says preserve west-medicine-priority fields. [VERIFIED: src/zyfangji_retrieval/ingestion/retrieval_text.py] [VERIFIED: user prompt]
-   - What's unclear: Preferred English JSON key name for Java consumers.
-   - Recommendation: Use `western_medicine_priority` with raw value from that source column.
+   - RESOLVED: Java-facing responses use `western_medicine_priority` with the raw value from `中西先后（先看中医？先看西医？）`.
 
 ## Environment Availability
 
@@ -392,16 +389,16 @@ SearchResponse(
 | Python 3.12 | Project runtime | Yes via `uv` env | `/usr/bin/python3` is 3.9.6; `uv` environment has project packages and has been used for verification. [VERIFIED: command probe] | Use `UV_PROJECT_ENVIRONMENT=/tmp/zyfangji-retrieval-venv uv run ...`. |
 | Docker | Qdrant server for integration/demo | Yes | Docker `29.3.0`, Compose plugin `5.1.0`. [VERIFIED: command probe] | Use fake Qdrant clients in unit tests if server is not running. |
 | Qdrant server | Real vector recall | Not confirmed running | `curl http://localhost:6333/healthz` returned no health payload during audit. [VERIFIED: command probe] | Unit-test vector retriever with fake client; integration/demo must start Qdrant. |
-| FlagEmbedding | Real local BGE rerank | No | Not installed in project dependencies. [VERIFIED: pyproject.toml] | Use deterministic provider tests; add dependency/config only when real reranker is selected. |
+| FlagEmbedding | Real local BGE rerank | Planned in Phase 3 | Add `FlagEmbedding==1.4.0` to project dependencies in Plan 03-02. [VERIFIED: PyPI JSON] | Deterministic provider is allowed only for unit tests and explicitly configured dev fallback. |
 
 **Missing dependencies with no fallback:**
 
-- None for deterministic Phase 3 implementation and unit/API tests. [VERIFIED: existing test pattern]
+- None after Plan 03-02 adds `FlagEmbedding==1.4.0` for real local BGE reranker mode. [VERIFIED: PyPI JSON]
 
 **Missing dependencies with fallback:**
 
 - Running Qdrant server: use fake client for automated unit tests; real demo/search requires service startup.
-- Real BGE-Reranker-v2-m3 runtime: use `RerankerProvider` protocol and deterministic adapter until local model/API is configured.
+- Real BGE-Reranker-v2-m3 runtime: Plan 03-02 must add `FlagEmbedding==1.4.0` and implement `BGERerankerProvider`; deterministic adapter remains only for unit tests and explicit dev fallback.
 
 ## Security Domain
 
