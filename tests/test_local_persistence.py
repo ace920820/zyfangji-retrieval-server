@@ -4,6 +4,10 @@ from pathlib import Path
 
 from zyfangji_retrieval.domain.models import KnowledgeEntry
 from zyfangji_retrieval.ingestion.excel_reader import WorkbookRow, read_shanghanlun_workbook
+from zyfangji_retrieval.ingestion.importer import (
+    import_workbook_to_metadata,
+    load_entries_for_rebuild,
+)
 from zyfangji_retrieval.ingestion.mapper import map_row_to_entry, validate_source_row
 from zyfangji_retrieval.ingestion.reports import ImportReport, RowIssue, build_import_report
 from zyfangji_retrieval.persistence.sqlite import SQLiteMetadataStore
@@ -133,3 +137,50 @@ def test_raw_records_are_queryable_by_source_row_and_preserve_all_source_fields(
     payload = json.loads(raw_record["raw_json"])
     assert payload["推荐方剂"] == "麻黄汤"
     assert len(payload) == 22
+
+
+def test_import_workbook_to_metadata_persists_real_workbook_report(tmp_path: Path) -> None:
+    db_path = tmp_path / "metadata.db"
+
+    report = import_workbook_to_metadata(SAMPLE_WORKBOOK, db_path)
+
+    assert report.total_rows > 1200
+    assert report.valid_rows > 1000
+    assert report.indexed_count == report.valid_rows
+    assert report.index_version.startswith("local-")
+    assert report.metadata_version == "local-v1"
+
+
+def test_load_entries_for_rebuild_returns_persisted_entry_count(tmp_path: Path) -> None:
+    db_path = tmp_path / "metadata.db"
+    report = import_workbook_to_metadata(SAMPLE_WORKBOOK, db_path)
+
+    entries = load_entries_for_rebuild(db_path)
+
+    assert len(entries) == report.indexed_count
+    assert all(entry.entry_id for entry in entries)
+
+
+def test_reimporting_same_workbook_preserves_entry_id_set(tmp_path: Path) -> None:
+    db_path = tmp_path / "metadata.db"
+
+    first_report = import_workbook_to_metadata(SAMPLE_WORKBOOK, db_path)
+    first_ids = {entry.entry_id for entry in load_entries_for_rebuild(db_path)}
+    second_report = import_workbook_to_metadata(SAMPLE_WORKBOOK, db_path)
+    second_ids = {entry.entry_id for entry in load_entries_for_rebuild(db_path)}
+
+    assert first_report.index_version.startswith("local-")
+    assert second_report.index_version.startswith("local-")
+    assert first_ids == second_ids
+    assert len(second_ids) == second_report.indexed_count
+
+
+def test_local_persistence_import_does_not_require_customer_mysql() -> None:
+    import zyfangji_retrieval.ingestion.importer as importer
+
+    source = Path(importer.__file__).read_text(encoding="utf-8")
+
+    assert "MYSQL" not in source
+    assert "MySQL" not in source
+    assert "pymysql" not in source
+    assert "SQLAlchemy" not in source
