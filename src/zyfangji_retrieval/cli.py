@@ -10,6 +10,7 @@ from zyfangji_retrieval.indexing.bm25_store import BM25IndexStore
 from zyfangji_retrieval.indexing.embeddings import DeterministicEmbeddingProvider
 from zyfangji_retrieval.indexing.lifecycle import IndexLifecycleService
 from zyfangji_retrieval.indexing.qdrant_store import QdrantVectorIndex
+from zyfangji_retrieval.indexing.status import IndexStatusService
 from zyfangji_retrieval.indexing.validation import validate_persisted_counts
 from zyfangji_retrieval.ingestion.excel_reader import read_shanghanlun_workbook
 from zyfangji_retrieval.ingestion.importer import (
@@ -171,6 +172,16 @@ def index_validate(
         qdrant_alias=build.qdrant_alias,
     )
     typer.echo(validation.model_dump_json(indent=2, ensure_ascii=False))
+
+
+@app.command("index-status")
+def index_status(
+    db_path: Path = typer.Option(Path("var/metadata/knowledge.db"), "--db-path"),
+) -> None:
+    settings = get_settings()
+    state_store = SQLiteIndexStateStore(db_path)
+    status = IndexStatusService(state_store, settings).status()
+    typer.echo(status.model_dump_json(indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":

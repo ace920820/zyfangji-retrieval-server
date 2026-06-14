@@ -55,6 +55,8 @@ class IndexStatus(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
 
     ready: bool = False
+    active_version: str | None = None
+    indexed_count: int = 0
     index_version: str | None = None
     metadata_version: str | None = None
     entry_count: int = 0
@@ -63,13 +65,14 @@ class IndexStatus(BaseModel):
     provider_id: str | None = None
     model_id: str | None = None
     vector_size: int | None = None
+    last_build_time: datetime | None = None
     updated_at: datetime | None = None
     last_error: str | None = None
     qdrant_collection: str | None = None
     qdrant_alias: str | None = None
     bm25_path: str | None = None
     vector_store: str = "qdrant"
-    retrieval_strategy: str = "bm25_dense_hybrid"
+    retrieval_strategy: str = "bm25+dense"
     reranker_enabled: bool = False
     reranker_model_id: str | None = None
     reranker_status: str = "not_configured"
