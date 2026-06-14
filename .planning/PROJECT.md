@@ -15,17 +15,18 @@
 ### Validated
 
 - Phase 1 validated the local data contract and ingestion foundation: the system imports the real `伤寒论` Excel workbook, preserves all 22 source columns, creates deterministic `entry_id` values independent of sparse Excel `编码`, records formula ambiguity with `needs_review`, builds canonical `retrieval_text`, and persists versioned local metadata that can rebuild old and latest `index_version` snapshots without customer MySQL.
+- Phase 2 validated the local index lifecycle and status foundation: the system builds independent Qdrant/BM25 index versions from local metadata, gates activation on validation, records build failures without replacing the active index, exposes read-only status/health/readiness surfaces, and keeps reranker execution explicitly out of scope as `not_configured` until Phase 3.
 
 ### Active
 
 - [x] 从《伤寒论》Excel 样例中解析约 1248 条有效病症-方剂记录，并保留完整展示字段。
 - [x] 将核心检索字段构造成 `retrieval_text`，支持后续 BM25 关键词召回和 BGE-M3 向量召回。
+- [x] 提供本地文件导入接口或导入命令，支持从本地 Excel 构建元数据、Qdrant 向量索引和 BM25 索引。
+- [x] 提供基础状态接口，展示模型、向量库、检索方式、知识条数、索引版本和更新时间。
 - [ ] 实现 Hybrid Fusion，将 BM25 Top50 与向量 Top50 融合为候选集。
 - [ ] 使用 BGE-Reranker-v2-m3 对候选集重排，返回 Top10 或调用方指定的 topK 结果。
-- [ ] 提供本地文件导入接口或导入命令，支持从本地 Excel 构建元数据、Qdrant 向量索引和 BM25 索引。
 - [ ] 提供患者信息检索接口，接收症状、舌诊、脉象、补充描述等输入并返回 topK 方剂条目。
 - [ ] 检索结果返回匹配分、方剂名称、方剂编码/回连标识、治法、证型、病名、原文依据、禁忌等字段。
-- [ ] 提供基础状态接口，展示模型、向量库、检索方式、知识条数、索引版本和更新时间。
 - [ ] 输出接口文档，便于业务 Java 后端和前端联调。
 - [ ] 部署一个示例服务或示例页面，支持客户在两到三周内查看效果。
 
@@ -72,6 +73,8 @@
 | 后台管理系统放到 MVP 后 | 一期先交付检索闭环和接口文档，降低两到三周 demo 风险 | — Pending |
 | MVP 检索链路包含 Hybrid Search 与 Rerank | 需求文档明确要求 BM25 + BGE-M3 召回、融合、BGE-Reranker-v2-m3 重排 | — Pending |
 | 方剂 code/条目 ID 需要独立规范 | Excel `编码` 不完整，推荐方剂存在多方剂文本，不能直接作为稳定回连键 | Phase 1 confirmed |
+| SQLite active index is the local source of truth | Qdrant alias only represents vector routing; BM25 artifacts and failure visibility also need one local state ledger | Phase 2 confirmed |
+| Status/readiness must be read-only and cheap | Deployment probes and Java backend checks should not invoke embedding providers, Qdrant network calls, rerankers, or rebuilds | Phase 2 confirmed |
 
 ## Evolution
 
@@ -91,4 +94,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-14 after Phase 1 verification*
+*Last updated: 2026-06-14 after Phase 2 verification*

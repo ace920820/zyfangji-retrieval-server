@@ -12,8 +12,8 @@ This roadmap delivers a retrieval-only TCM formula service for Java-backend inte
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Local Data Contract and Ingestion** - Convert the real `伤寒论` workbook into stable, auditable local knowledge entries.
-- [ ] **Phase 2: Index Lifecycle and Status** - Build Qdrant/BM25 indexes from local metadata and expose readiness/status.
+- [x] **Phase 1: Local Data Contract and Ingestion** - Convert the real `伤寒论` workbook into stable, auditable local knowledge entries.
+- [x] **Phase 2: Index Lifecycle and Status** - Build Qdrant/BM25 indexes from local metadata and expose readiness/status.
 - [ ] **Phase 3: Hybrid Search and Rerank API** - Expose the patient search endpoint with BM25, vector recall, fusion, rerank, and evidence-rich results.
 - [ ] **Phase 4: Quality, Safety, and Performance Validation** - Lock in regression tests, score/safety boundaries, and MVP latency checks.
 - [ ] **Phase 5: Documentation and Demo Delivery** - Package OpenAPI docs, integration examples, Docker Compose, and a minimal reviewer demo flow.
@@ -50,9 +50,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Implement embedding provider, Qdrant repository, and vector payload indexing
-- [ ] 02-02-PLAN.md — Implement BM25 indexing and versioned rebuild/activation flow
-- [ ] 02-03-PLAN.md — Expose status, health/readiness, and import/rebuild failure visibility
+- [x] 02-01-PLAN.md — Implement embedding provider, Qdrant repository, and vector payload indexing
+- [x] 02-02-PLAN.md — Implement BM25 indexing and versioned rebuild/activation flow
+- [x] 02-03-PLAN.md — Expose status, health/readiness, and import/rebuild failure visibility
 
 ### Phase 3: Hybrid Search and Rerank API
 **Goal**: Java backend can submit patient presentation data and receive TopK ranked formula results produced by BM25 recall, vector recall, hybrid fusion, and BGE rerank.
@@ -112,8 +112,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Local Data Contract and Ingestion | 0/3 | Not started | - |
-| 2. Index Lifecycle and Status | 0/3 | Not started | - |
+| 1. Local Data Contract and Ingestion | 3/3 | Complete | 2026-06-14 |
+| 2. Index Lifecycle and Status | 3/3 | Complete | 2026-06-14 |
 | 3. Hybrid Search and Rerank API | 0/3 | Not started | - |
 | 4. Quality, Safety, and Performance Validation | 0/2 | Not started | - |
 | 5. Documentation and Demo Delivery | 0/3 | Not started | - |

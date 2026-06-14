@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Requirements, roadmap, and state adjusted to saved MVP document and user scope corrections.
-last_updated: "2026-06-14T09:00:47.445Z"
-last_activity: 2026-06-14 -- Phase 2 planning complete
+status: ready_to_plan
+stopped_at: Phase 2 completed and verified; ready to discuss or plan Phase 3.
+last_updated: "2026-06-14T15:31:14.912Z"
+last_activity: 2026-06-14 -- Phase 2 complete and verified
 progress:
   total_phases: 5
-  completed_phases: 1
-  total_plans: 9
-  completed_plans: 3
-  percent: 33
+  completed_phases: 2
+  total_plans: 14
+  completed_plans: 6
+  percent: 40
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-14)
 
 **Core value:** 医生输入患者症状后，系统必须能稳定返回有典籍依据、排序合理、可回连业务方剂库的推荐方剂列表。
-**Current focus:** Phase 2: Index Lifecycle and Status
+**Current focus:** Phase 3: Hybrid Search and Rerank API
 
 ## Current Position
 
-Phase: 2 of 5 (Index Lifecycle and Status)
+Phase: 3 of 5 (Hybrid Search and Rerank API)
 Plan: 0 of 3 in current phase
-Status: Ready to execute
-Last activity: 2026-06-14 -- Phase 2 planning complete
+Status: Ready to discuss or plan
+Last activity: 2026-06-14 -- Phase 2 complete and verified
 
-Progress: [███░░░░░░░] 33%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 3
+- Total plans completed: 6
 - Average duration: -
 - Total execution time: 0.0 hours
 
@@ -45,7 +45,7 @@ Progress: [███░░░░░░░] 33%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Local Data Contract and Ingestion | 3/3 | - | - |
-| 2. Index Lifecycle and Status | 0/3 | - | - |
+| 2. Index Lifecycle and Status | 3/3 | - | - |
 | 3. Hybrid Search and Rerank API | 0/3 | - | - |
 | 4. Quality, Safety, and Performance Validation | 0/2 | - | - |
 | 5. Documentation and Demo Delivery | 0/3 | - | - |

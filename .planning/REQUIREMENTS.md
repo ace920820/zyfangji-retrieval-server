@@ -26,12 +26,12 @@ Requirements for the MVP retrieval-service demo and Java-backend integration. MV
 
 ### Indexing
 
-- [ ] **IDX-01**: System builds an independent retrieval index from normalized local knowledge entries rather than searching a customer business database directly.
-- [ ] **IDX-02**: System supports a full index rebuild that creates a new index version and activates it only after build validation succeeds.
-- [ ] **IDX-03**: System exposes index/status data including readiness, active version, indexed count, model/provider identifiers, last build time, and last error.
-- [ ] **IDX-04**: System supports BGE-M3 semantic embeddings through a swappable embedding-provider interface.
-- [ ] **IDX-05**: System writes dense vectors and payload metadata to Qdrant for vector recall.
-- [ ] **IDX-06**: System supports BM25-style lexical retrieval with Chinese tokenization for exact symptoms, aliases, formula names, tongue/pulse terms, and article references.
+- [x] **IDX-01**: System builds an independent retrieval index from normalized local knowledge entries rather than searching a customer business database directly.
+- [x] **IDX-02**: System supports a full index rebuild that creates a new index version and activates it only after build validation succeeds.
+- [x] **IDX-03**: System exposes index/status data including readiness, active version, indexed count, model/provider identifiers, last build time, and last error.
+- [x] **IDX-04**: System supports BGE-M3 semantic embeddings through a swappable embedding-provider interface.
+- [x] **IDX-05**: System writes dense vectors and payload metadata to Qdrant for vector recall.
+- [x] **IDX-06**: System supports BM25-style lexical retrieval with Chinese tokenization for exact symptoms, aliases, formula names, tongue/pulse terms, and article references.
 
 ### Retrieval Pipeline
 
@@ -54,10 +54,10 @@ Requirements for the MVP retrieval-service demo and Java-backend integration. MV
 
 ### Status and Operations
 
-- [ ] **STAT-01**: System exposes a lightweight status endpoint with embedding model, reranker model, vector store, retrieval strategy, knowledge count, index version, and update time.
-- [ ] **STAT-02**: System exposes a health/readiness endpoint suitable for deployment and Java-backend integration checks.
-- [ ] **STAT-03**: Import and rebuild failures are visible through API responses or status output instead of failing silently.
-- [ ] **STAT-04**: Embedding or reranker provider failures return clear errors and do not present stale or partial results as fresh matches.
+- [x] **STAT-01**: System exposes a lightweight status endpoint with embedding model, reranker model, vector store, retrieval strategy, knowledge count, index version, and update time.
+- [x] **STAT-02**: System exposes a health/readiness endpoint suitable for deployment and Java-backend integration checks.
+- [x] **STAT-03**: Import and rebuild failures are visible through API responses or status output instead of failing silently.
+- [x] **STAT-04**: Embedding or reranker provider failures return clear errors and do not present stale or partial results as fresh matches.
 
 ### Documentation and Deployment
 
@@ -148,12 +148,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ING-03 | Phase 1 | Verified |
 | ING-04 | Phase 1 | Verified |
 | ING-05 | Phase 1 | Verified |
-| IDX-01 | Phase 2 | Pending |
-| IDX-02 | Phase 2 | Pending |
-| IDX-03 | Phase 2 | Pending |
-| IDX-04 | Phase 2 | Pending |
-| IDX-05 | Phase 2 | Pending |
-| IDX-06 | Phase 2 | Pending |
+| IDX-01 | Phase 2 | Verified |
+| IDX-02 | Phase 2 | Verified |
+| IDX-03 | Phase 2 | Verified |
+| IDX-04 | Phase 2 | Verified |
+| IDX-05 | Phase 2 | Verified |
+| IDX-06 | Phase 2 | Verified |
 | PIPE-01 | Phase 3 | Pending |
 | PIPE-02 | Phase 3 | Pending |
 | PIPE-03 | Phase 3 | Pending |
@@ -167,10 +167,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RES-03 | Phase 3 | Pending |
 | RES-04 | Phase 3 | Pending |
 | RES-05 | Phase 3 | Pending |
-| STAT-01 | Phase 2 | Pending |
-| STAT-02 | Phase 2 | Pending |
-| STAT-03 | Phase 2 | Pending |
-| STAT-04 | Phase 2 | Pending |
+| STAT-01 | Phase 2 | Verified |
+| STAT-02 | Phase 2 | Verified |
+| STAT-03 | Phase 2 | Verified |
+| STAT-04 | Phase 2 | Verified |
 | DOC-01 | Phase 5 | Pending |
 | DOC-02 | Phase 5 | Pending |
 | DOC-03 | Phase 5 | Pending |
@@ -196,4 +196,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-06-14*
-*Last updated: 2026-06-14 after Phase 1 verification*
+*Last updated: 2026-06-14 after Phase 2 verification*
