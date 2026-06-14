@@ -587,18 +587,19 @@ def test_search_service_orchestrates_active_index_recall_fusion_and_rerank(tmp_p
     assert metadata_store.loaded_versions == [index_store.active.metadata_version]
     assert bm25_retriever.calls[0][2] == 50
     assert vector_retriever.calls[0][2] == 50
-    assert response.query_text == "主症:\n太阳病"
-    assert [result.evidence.entry_id for result in response.results] == ["entry-1"]
-    assert response.results[0].scores.bm25_score == 8.0
-    assert response.results[0].scores.vector_score == 0.72
-    assert response.results[0].scores.rerank_score == 0.95
-    assert response.results[0].evidence.formula_name == "麻黄汤"
-    assert response.pipeline.index_version == index_store.active.index_version
-    assert response.pipeline.metadata_version == index_store.active.metadata_version
-    assert response.pipeline.recall_topk == 50
-    assert response.pipeline.fusion_strategy == "rrf"
-    assert response.pipeline.reranker_model_id == "BAAI/bge-reranker-v2-m3"
-    assert response.pipeline.pipeline_status == "reranked"
+    assert response.query.text == "主症:\n太阳病"
+    assert [result.entry_id for result in response.results] == ["entry-1"]
+    assert response.results[0].signal_scores.bm25_score == 8.0
+    assert response.results[0].signal_scores.vector_score == 0.72
+    assert response.results[0].signal_scores.rerank_score == 0.95
+    assert response.results[0].formula_raw == "麻黄汤"
+    assert response.metadata.index_version == index_store.active.index_version
+    assert response.metadata.metadata_version == index_store.active.metadata_version
+    assert response.metadata.requested_topk == 1
+    assert response.metadata.recall_topk == 50
+    assert response.metadata.fusion_strategy == "rrf"
+    assert response.metadata.reranker_model_id == "BAAI/bge-reranker-v2-m3"
+    assert response.metadata.pipeline_status == "reranked"
 
 
 def test_search_service_maps_embedding_failure_to_typed_error(tmp_path: Path) -> None:
@@ -625,11 +626,11 @@ def test_search_service_optional_reranker_failure_returns_degraded_fused_results
 
     response = service.search(PatientSearchRequest(main_symptom="太阳病", topk=2))
 
-    assert response.pipeline.pipeline_status == "reranker_degraded"
+    assert response.metadata.pipeline_status == "reranker_degraded"
     assert [warning.code for warning in response.warnings] == [
         "query_too_sparse",
         "query_broad",
         "reranker_degraded",
     ]
-    assert [result.evidence.entry_id for result in response.results] == ["entry-1", "entry-2"]
-    assert all(result.scores.rerank_score is None for result in response.results)
+    assert [result.entry_id for result in response.results] == ["entry-1", "entry-2"]
+    assert all(result.signal_scores.rerank_score is None for result in response.results)

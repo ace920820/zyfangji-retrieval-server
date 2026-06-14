@@ -52,35 +52,52 @@ class SignalScores(BaseModel):
     rerank_score: float | None = None
 
 
+class SearchQuery(BaseModel):
+    text: str
+
+
+class SearchResultSource(BaseModel):
+    book: str
+    sheet: str
+    row: int
+    article: str | None = None
+
+
 class EvidenceFields(BaseModel):
-    entry_id: str
-    source_book: str
-    source_sheet: str
-    source_row: int
-    formula_name: str
-    formula_code: str | None = None
-    formula_mapping_status: str
-    therapy: str | None = None
+    main_symptom: str | None = None
+    complex_symptom: str | None = None
+    detail_symptom: str | None = None
+    alias: str | None = None
+    tongue: str | None = None
+    pulse: str | None = None
+    source_article: str | None = None
+    syndrome: str | None = None
     tcm_disease: str | None = None
     western_disease: str | None = None
-    source_article: str | None = None
+    therapy: str | None = None
     contraindication: str | None = None
     effect: str | None = None
-    raw_record: dict[str, str] = Field(default_factory=dict)
-    normalized_record: dict[str, str] = Field(default_factory=dict)
+    western_medicine_priority: str | None = None
 
 
 class SearchResult(BaseModel):
     rank: int
-    match_score: float
-    score_type: str = "retrieval_ranking"
-    scores: SignalScores = Field(default_factory=SignalScores)
+    retrieval_score: float
+    score_type: str = "rerank_score"
+    entry_id: str
+    source: SearchResultSource
+    formula_raw: str
+    formula_mentions: list[object] = Field(default_factory=list)
+    formula_code: str | None = None
+    formula_mapping_status: str
     evidence: EvidenceFields
+    signal_scores: SignalScores = Field(default_factory=SignalScores)
 
 
 class SearchPipelineMetadata(BaseModel):
     index_version: str | None = None
     metadata_version: str | None = None
+    requested_topk: int = 10
     recall_topk: int = 50
     fusion_strategy: str = "rrf"
     reranker_model_id: str | None = "BAAI/bge-reranker-v2-m3"
@@ -88,11 +105,11 @@ class SearchPipelineMetadata(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    query_text: str
+    query: SearchQuery
     results: list[SearchResult]
     warnings: list[QueryWarning] = Field(default_factory=list)
+    metadata: SearchPipelineMetadata = Field(default_factory=SearchPipelineMetadata)
     score_semantics: str = SCORE_SEMANTICS
-    pipeline: SearchPipelineMetadata = Field(default_factory=SearchPipelineMetadata)
 
 
 class SearchError(BaseModel):

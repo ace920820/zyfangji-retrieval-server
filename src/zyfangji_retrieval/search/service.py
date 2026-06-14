@@ -1,23 +1,21 @@
 from __future__ import annotations
 
-from typing import Any
-
 from zyfangji_retrieval.config import AppSettings
 from zyfangji_retrieval.domain.index_models import ActiveIndexRecord
 from zyfangji_retrieval.domain.models import KnowledgeEntry
 from zyfangji_retrieval.domain.search_models import (
-    EvidenceFields,
     PatientSearchRequest,
     QueryWarning,
     SearchPipelineMetadata,
+    SearchQuery,
     SearchResponse,
     SearchResult,
-    SignalScores,
 )
 from zyfangji_retrieval.indexing.embeddings import EmbeddingProviderError
 from zyfangji_retrieval.persistence.index_state import SQLiteIndexStateStore
 from zyfangji_retrieval.persistence.sqlite import SQLiteMetadataStore
 from zyfangji_retrieval.search.bm25 import BM25Retriever
+from zyfangji_retrieval.search.evidence import project_search_result
 from zyfangji_retrieval.search.fusion import FusedCandidate, fuse_candidates
 from zyfangji_retrieval.search.query import build_patient_query
 from zyfangji_retrieval.search.rerank import (
@@ -135,12 +133,13 @@ class SearchService:
         ]
 
         return SearchResponse(
-            query_text=patient_query.text,
+            query=SearchQuery(text=patient_query.text),
             results=results,
             warnings=warnings,
-            pipeline=SearchPipelineMetadata(
+            metadata=SearchPipelineMetadata(
                 index_version=active.index_version,
                 metadata_version=active.metadata_version,
+                requested_topk=request.topk,
                 recall_topk=self.settings.recall_topk,
                 fusion_strategy=self.settings.fusion_strategy,
                 reranker_model_id=getattr(self.reranker, "model_id", None),
@@ -197,67 +196,17 @@ class SearchService:
         entry: KnowledgeEntry | None,
     ) -> SearchResult:
         if entry is None:
-            evidence = self._evidence_from_payload(candidate.entry_id, candidate.payload)
-        else:
-            evidence = self._evidence_from_entry(entry)
+            raise SearchServiceError(
+                code="index_not_ready",
+                message="Search metadata is missing for a recalled entry.",
+                details={"entry_id": candidate.entry_id},
+            )
         match_score = rerank_score if rerank_score is not None else candidate.fused_score
-        return SearchResult(
+        return project_search_result(
+            candidate,
             rank=rank,
-            match_score=float(match_score),
-            scores=SignalScores(
-                bm25_score=candidate.bm25_score,
-                vector_score=candidate.vector_score,
-                fused_score=candidate.fused_score,
-                rerank_score=rerank_score,
-            ),
-            evidence=evidence,
+            score_type="rerank_score" if rerank_score is not None else "fused_score",
+            entry=entry,
+            retrieval_score=match_score,
+            rerank_score=rerank_score,
         )
-
-    def _evidence_from_entry(self, entry: KnowledgeEntry) -> EvidenceFields:
-        first_mention = entry.formula_mentions[0] if entry.formula_mentions else None
-        return EvidenceFields(
-            entry_id=entry.entry_id,
-            source_book=entry.source_book,
-            source_sheet=entry.source_sheet,
-            source_row=entry.source_row,
-            formula_name=first_mention.name if first_mention is not None else entry.formula_raw,
-            formula_code=first_mention.code if first_mention is not None else entry.source_code,
-            formula_mapping_status=entry.formula_mapping_status,
-            therapy=entry.therapy,
-            tcm_disease=entry.tcm_disease,
-            western_disease=entry.western_disease,
-            source_article=entry.source_article,
-            contraindication=entry.contraindication,
-            effect=entry.effect,
-            raw_record=entry.raw_record,
-            normalized_record=entry.normalized_record,
-        )
-
-    def _evidence_from_payload(self, entry_id: str, payload: dict[str, Any]) -> EvidenceFields:
-        mentions = payload.get("formula_mentions")
-        first_mention = mentions[0] if isinstance(mentions, list) and mentions else {}
-        if not isinstance(first_mention, dict):
-            first_mention = {}
-        formula_raw = str(payload.get("formula_raw") or "")
-        return EvidenceFields(
-            entry_id=entry_id,
-            source_book=str(payload.get("source_book") or ""),
-            source_sheet=str(payload.get("source_sheet") or ""),
-            source_row=int(payload.get("source_row") or 0),
-            formula_name=str(first_mention.get("name") or formula_raw),
-            formula_code=first_mention.get("code") or payload.get("source_code"),
-            formula_mapping_status=str(payload.get("formula_mapping_status") or "unmapped"),
-            therapy=_optional_str(payload.get("therapy")),
-            tcm_disease=_optional_str(payload.get("tcm_disease")),
-            western_disease=_optional_str(payload.get("western_disease")),
-            source_article=_optional_str(payload.get("source_article")),
-            contraindication=_optional_str(payload.get("contraindication")),
-            effect=_optional_str(payload.get("effect")),
-        )
-
-
-def _optional_str(value: Any) -> str | None:
-    if value is None:
-        return None
-    text = str(value)
-    return text or None
