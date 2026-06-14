@@ -2,6 +2,10 @@ import json
 import sqlite3
 from pathlib import Path
 
+import pytest
+from typer.testing import CliRunner
+
+from zyfangji_retrieval.cli import app
 from zyfangji_retrieval.domain.models import KnowledgeEntry
 from zyfangji_retrieval.ingestion.excel_reader import WorkbookRow, read_shanghanlun_workbook
 from zyfangji_retrieval.ingestion.importer import (
@@ -15,6 +19,7 @@ from zyfangji_retrieval.persistence.sqlite import SQLiteMetadataStore
 
 
 SAMPLE_WORKBOOK = Path("data/伤寒论原文 病症信息对应表（内容齐全 1 稿）.xlsx")
+runner = CliRunner()
 
 
 def _sample_row_and_entry() -> tuple[WorkbookRow, KnowledgeEntry]:
