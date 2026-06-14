@@ -10,7 +10,17 @@ from fastapi.testclient import TestClient
 from zyfangji_retrieval.config import AppSettings
 from zyfangji_retrieval.domain.index_models import ActiveIndexRecord
 from zyfangji_retrieval.domain.models import FormulaMention, KnowledgeEntry
-from zyfangji_retrieval.domain.search_models import PatientSearchRequest
+from zyfangji_retrieval.domain.search_models import (
+    EvidenceFields,
+    PatientSearchRequest,
+    QueryWarning,
+    SearchPipelineMetadata,
+    SearchQuery,
+    SearchResponse,
+    SearchResult,
+    SearchResultSource,
+    SignalScores,
+)
 from zyfangji_retrieval.indexing.embeddings import EmbeddingProviderError
 from zyfangji_retrieval.search.embedding_factory import build_embedding_provider
 from zyfangji_retrieval.search.rerank import (
@@ -327,3 +337,92 @@ def test_missing_bge_endpoint_keeps_health_status_callable_and_search_fails_type
     assert response.status_code == 503
     assert response.json()["detail"]["error"]["code"] == "embedding_provider_unavailable"
     assert response.json()["detail"]["error"]["message"] == "Embedding provider unavailable."
+
+
+class _EchoSearchService:
+    def search(self, request: PatientSearchRequest) -> SearchResponse:
+        return SearchResponse(
+            query=SearchQuery(text=f"主症:\n{request.main_symptom}"),
+            results=[
+                SearchResult(
+                    rank=1,
+                    retrieval_score=0.9,
+                    score_type="rerank_score",
+                    entry_id="entry-1",
+                    source=SearchResultSource(
+                        book="伤寒论",
+                        sheet="病症信息",
+                        row=12,
+                        article="第35条",
+                    ),
+                    formula_raw="麻黄汤",
+                    formula_mentions=[{"name": "麻黄汤", "code": "F-MHT"}],
+                    formula_code="F-MHT",
+                    formula_mapping_status="parsed",
+                    evidence=EvidenceFields(
+                        main_symptom="发热恶寒",
+                        western_medicine_priority="高热不退先看西医",
+                    ),
+                    signal_scores=SignalScores(
+                        bm25_score=8.0,
+                        vector_score=0.9,
+                        fused_score=0.95,
+                        rerank_score=0.9,
+                    ),
+                )
+            ],
+            warnings=[
+                QueryWarning(code="query_too_sparse", severity="info", message="sparse"),
+                QueryWarning(code="query_broad", severity="info", message="broad"),
+            ],
+            metadata=SearchPipelineMetadata(
+                index_version="idx-1",
+                metadata_version="meta-1",
+                requested_topk=request.topk,
+                recall_topk=50,
+                fusion_strategy="rrf",
+                reranker_model_id="BAAI/bge-reranker-v2-m3",
+                pipeline_status="reranked",
+            ),
+        )
+
+
+def test_search_route_defaults_topk_to_ten_and_returns_score_semantics() -> None:
+    app = app_module.create_app()
+    app.state.search_service = _EchoSearchService()
+    client = TestClient(app)
+
+    response = client.post("/api/search", json={"main_symptom": "发热恶寒"})
+
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["metadata"]["requested_topk"] == 10
+    assert payload["warnings"][0]["code"] == "query_too_sparse"
+    assert payload["warnings"][1]["code"] == "query_broad"
+    assert "not medical confidence, diagnosis probability, or prescription certainty" in payload[
+        "score_semantics"
+    ]
+    assert "confidence" not in payload
+    assert "diagnosis_probability" not in payload
+    assert "prescription_certainty" not in payload
+
+
+def test_search_route_respects_explicit_topk_two() -> None:
+    app = app_module.create_app()
+    app.state.search_service = _EchoSearchService()
+    client = TestClient(app)
+
+    response = client.post("/api/search", json={"main_symptom": "发热恶寒", "topk": 2})
+
+    assert response.status_code == 200
+    assert response.json()["metadata"]["requested_topk"] == 2
+
+
+def test_search_route_rejects_topk_over_50_with_stable_validation_envelope() -> None:
+    client = TestClient(app_module.create_app())
+
+    response = client.post("/api/search", json={"main_symptom": "发热", "topk": 51})
+
+    assert response.status_code == 422
+    assert response.json()["detail"]["error"]["code"] == "validation_error"
+    assert response.json()["detail"]["error"]["message"] == "Request validation failed."
