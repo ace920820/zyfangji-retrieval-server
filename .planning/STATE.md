@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Requirements, roadmap, and state adjusted to saved MVP document and user scope corrections.
-last_updated: "2026-06-14T08:34:56.443Z"
-last_activity: 2026-06-14
+last_updated: "2026-06-14T09:00:47.445Z"
+last_activity: 2026-06-14 -- Phase 2 planning complete
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 3
+  total_plans: 9
   completed_plans: 3
-  percent: 100
+  percent: 33
 ---
 
 # Project State
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-06-14)
 
 Phase: 2 of 5 (Index Lifecycle and Status)
 Plan: 0 of 3 in current phase
-Status: Ready to plan
-Last activity: 2026-06-14
+Status: Ready to execute
+Last activity: 2026-06-14 -- Phase 2 planning complete
 
-Progress: [██░░░░░░░░] 20%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
@@ -76,7 +76,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 2]: Final BGE-M3 / reranker execution mode, model hosting, API endpoint, model dimensions, quota, latency, and machine resources need confirmation.
+- [Phase 2 execution]: Real BGE-M3 provider mode, model hosting, quota, latency, and machine resources can remain config-driven; Phase 2 plans use deterministic provider tests and explicit reranker `not_configured` status.
 - [Phase 3]: Business formulary mapping table may be unavailable; v1 must allow `code: null` with explicit mapping status.
 - [Phase 4]: Representative doctor queries are needed to make regression tests meaningful beyond generic smoke queries.
 - [Phase 5]: Demo provider-key handling and privacy/logging expectations need confirmation before external exposure.
