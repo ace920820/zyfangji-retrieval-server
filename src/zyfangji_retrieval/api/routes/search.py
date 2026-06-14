@@ -8,6 +8,7 @@ from zyfangji_retrieval.domain.search_models import (
     SearchErrorEnvelope,
     SearchResponse,
 )
+from zyfangji_retrieval.search.service import SearchServiceError
 
 
 class SearchService(Protocol):
@@ -43,4 +44,16 @@ def search(
     raw_request: Request,
 ) -> SearchResponse:
     service = _get_search_service(raw_request)
-    return service.search(request)
+    try:
+        return service.search(request)
+    except SearchServiceError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=SearchErrorEnvelope(
+                error=SearchError(
+                    code=exc.code,
+                    message=exc.message,
+                    details=exc.details,
+                )
+            ).model_dump(mode="json"),
+        ) from exc

@@ -8,6 +8,8 @@ import pytest
 
 from zyfangji_retrieval.config import AppSettings
 from zyfangji_retrieval.domain.index_models import ActiveIndexRecord
+from zyfangji_retrieval.domain.models import FormulaMention, KnowledgeEntry
+from zyfangji_retrieval.domain.search_models import PatientSearchRequest
 from zyfangji_retrieval.indexing.bm25_store import BM25IndexMetadata, BM25IndexSnapshot
 from zyfangji_retrieval.search.bm25 import BM25Retriever
 from zyfangji_retrieval.search.embedding_factory import (
@@ -23,6 +25,7 @@ from zyfangji_retrieval.search.rerank import (
     RerankCandidate,
     RerankerProviderError,
 )
+from zyfangji_retrieval.search.service import SearchService, SearchServiceError
 from zyfangji_retrieval.search.vector import VectorRetriever
 
 
@@ -406,3 +409,227 @@ def test_disabled_reranker_raises_typed_error() -> None:
             "太阳病",
             [RerankCandidate(entry_id="entry-a", text="太阳病")],
         )
+
+
+def _entry(entry_id: str, text: str, formula: str) -> KnowledgeEntry:
+    return KnowledgeEntry(
+        entry_id=entry_id,
+        source_book="伤寒论",
+        source_sheet="Sheet1",
+        source_row=int(entry_id.rsplit("-", maxsplit=1)[-1]),
+        source_code=f"CODE-{entry_id}",
+        formula_raw=formula,
+        formula_mentions=[FormulaMention(name=formula, code=f"F-{entry_id}")],
+        formula_mapping_status="parsed",
+        retrieval_text=text,
+        raw_record={"推荐方剂": formula},
+        normalized_record={"推荐方剂": formula},
+        therapy="解肌发表",
+        tcm_disease="太阳病",
+        western_disease="感冒",
+        source_article=text,
+        contraindication="禁忌文本",
+        effect="疗效文本",
+    )
+
+
+class FakeIndexStore:
+    def __init__(self, active: ActiveIndexRecord | None) -> None:
+        self.active = active
+        self.calls: list[str] = []
+
+    def get_active(self) -> ActiveIndexRecord | None:
+        self.calls.append("get_active")
+        return self.active
+
+
+class FakeMetadataStore:
+    def __init__(self, entries: list[KnowledgeEntry]) -> None:
+        self.entries = entries
+        self.loaded_versions: list[str | None] = []
+
+    def load_entries(self, index_version: str | None = None) -> list[KnowledgeEntry]:
+        self.loaded_versions.append(index_version)
+        return self.entries
+
+
+class FakeBM25Retriever:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, ActiveIndexRecord, int]] = []
+
+    def recall(self, query_text: str, active: ActiveIndexRecord, recall_topk: int) -> list[Any]:
+        self.calls.append((query_text, active, recall_topk))
+        return [
+            type("BM25", (), {"entry_id": "entry-1", "rank": 1, "score": 8.0})(),
+            type("BM25", (), {"entry_id": "entry-2", "rank": 2, "score": 4.0})(),
+        ]
+
+
+class FakeVectorRetrieverForService:
+    def __init__(self, fail: bool = False) -> None:
+        self.fail = fail
+        self.calls: list[tuple[str, ActiveIndexRecord, int]] = []
+
+    def recall(self, query_text: str, active: ActiveIndexRecord, recall_topk: int) -> list[Any]:
+        self.calls.append((query_text, active, recall_topk))
+        if self.fail:
+            raise EmbeddingProviderError("embedding provider unavailable")
+        return [
+            type(
+                "Vector",
+                (),
+                {
+                    "entry_id": "entry-2",
+                    "rank": 1,
+                    "score": 0.91,
+                    "payload": {"retrieval_text": "桂枝汤"},
+                },
+            )(),
+            type(
+                "Vector",
+                (),
+                {
+                    "entry_id": "entry-1",
+                    "rank": 2,
+                    "score": 0.72,
+                    "payload": {"retrieval_text": "麻黄汤"},
+                },
+            )(),
+        ]
+
+
+class FakeServiceReranker:
+    model_id = "BAAI/bge-reranker-v2-m3"
+
+    def __init__(self, fail: bool = False) -> None:
+        self.fail = fail
+        self.calls: list[tuple[str, list[RerankCandidate]]] = []
+
+    def rerank(self, query_text: str, candidates: list[RerankCandidate]) -> list[Any]:
+        self.calls.append((query_text, list(candidates)))
+        if self.fail:
+            raise RerankerProviderError("reranker provider unavailable")
+        scores = {"entry-1": 0.95, "entry-2": 0.1}
+        reranked = [
+            type(
+                "Reranked",
+                (),
+                {
+                    "entry_id": candidate.entry_id,
+                    "text": candidate.text,
+                    "payload": candidate.payload,
+                    "rerank_score": scores[candidate.entry_id],
+                    "rerank_rank": 1 if candidate.entry_id == "entry-1" else 2,
+                },
+            )()
+            for candidate in candidates
+        ]
+        return sorted(reranked, key=lambda candidate: -candidate.rerank_score)
+
+
+def _service(
+    tmp_path: Path,
+    *,
+    active: ActiveIndexRecord | None = None,
+    reranker_required: bool = True,
+    vector_fail: bool = False,
+    reranker_fail: bool = False,
+) -> tuple[SearchService, FakeIndexStore, FakeMetadataStore, FakeBM25Retriever, FakeVectorRetrieverForService]:
+    active_record = active if active is not None else _active(tmp_path)
+    index_store = FakeIndexStore(active_record)
+    metadata_store = FakeMetadataStore(
+        [
+            _entry("entry-1", "麻黄汤 条文", "麻黄汤"),
+            _entry("entry-2", "桂枝汤 条文", "桂枝汤"),
+        ]
+    )
+    bm25_retriever = FakeBM25Retriever()
+    vector_retriever = FakeVectorRetrieverForService(fail=vector_fail)
+    service = SearchService(
+        settings=AppSettings(
+            recall_topk=50,
+            fusion_strategy="rrf",
+            rrf_k=60,
+            reranker_required=reranker_required,
+        ),
+        index_store=index_store,
+        metadata_store=metadata_store,
+        bm25_retriever=bm25_retriever,
+        vector_retriever=vector_retriever,
+        reranker=FakeServiceReranker(fail=reranker_fail),
+    )
+    return service, index_store, metadata_store, bm25_retriever, vector_retriever
+
+
+def test_search_service_requires_active_index_before_recall(tmp_path: Path) -> None:
+    service, index_store, metadata_store, bm25_retriever, vector_retriever = _service(
+        tmp_path,
+        active=None,
+    )
+    index_store.active = None
+
+    with pytest.raises(SearchServiceError) as error:
+        service.search(PatientSearchRequest(main_symptom="太阳病"))
+
+    assert error.value.code == "index_not_ready"
+    assert index_store.calls == ["get_active"]
+    assert metadata_store.loaded_versions == []
+    assert bm25_retriever.calls == []
+    assert vector_retriever.calls == []
+
+
+def test_search_service_orchestrates_active_index_recall_fusion_and_rerank(tmp_path: Path) -> None:
+    service, index_store, metadata_store, bm25_retriever, vector_retriever = _service(tmp_path)
+
+    response = service.search(PatientSearchRequest(main_symptom="太阳病", topk=1))
+
+    assert index_store.calls == ["get_active"]
+    assert metadata_store.loaded_versions == [index_store.active.metadata_version]
+    assert bm25_retriever.calls[0][2] == 50
+    assert vector_retriever.calls[0][2] == 50
+    assert response.query_text == "主症:\n太阳病"
+    assert [result.evidence.entry_id for result in response.results] == ["entry-1"]
+    assert response.results[0].scores.bm25_score == 8.0
+    assert response.results[0].scores.vector_score == 0.72
+    assert response.results[0].scores.rerank_score == 0.95
+    assert response.results[0].evidence.formula_name == "麻黄汤"
+    assert response.pipeline.index_version == index_store.active.index_version
+    assert response.pipeline.metadata_version == index_store.active.metadata_version
+    assert response.pipeline.recall_topk == 50
+    assert response.pipeline.fusion_strategy == "rrf"
+    assert response.pipeline.reranker_model_id == "BAAI/bge-reranker-v2-m3"
+    assert response.pipeline.pipeline_status == "reranked"
+
+
+def test_search_service_maps_embedding_failure_to_typed_error(tmp_path: Path) -> None:
+    service, *_ = _service(tmp_path, vector_fail=True)
+
+    with pytest.raises(SearchServiceError) as error:
+        service.search(PatientSearchRequest(main_symptom="太阳病"))
+
+    assert error.value.code == "embedding_provider_unavailable"
+    assert "太阳病" not in error.value.message
+
+
+def test_search_service_required_reranker_failure_raises_typed_error(tmp_path: Path) -> None:
+    service, *_ = _service(tmp_path, reranker_required=True, reranker_fail=True)
+
+    with pytest.raises(SearchServiceError) as error:
+        service.search(PatientSearchRequest(main_symptom="太阳病"))
+
+    assert error.value.code == "reranker_unavailable"
+
+
+def test_search_service_optional_reranker_failure_returns_degraded_fused_results(tmp_path: Path) -> None:
+    service, *_ = _service(tmp_path, reranker_required=False, reranker_fail=True)
+
+    response = service.search(PatientSearchRequest(main_symptom="太阳病", topk=2))
+
+    assert response.pipeline.pipeline_status == "reranker_degraded"
+    assert [warning.code for warning in response.warnings] == [
+        "query_too_sparse",
+        "query_broad",
+        "reranker_degraded",
+    ]
+    assert [result.evidence.entry_id for result in response.results] == ["entry-1", "entry-2"]
+    assert all(result.scores.rerank_score is None for result in response.results)

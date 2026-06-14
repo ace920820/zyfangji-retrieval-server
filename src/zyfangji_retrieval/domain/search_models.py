@@ -84,6 +84,7 @@ class SearchPipelineMetadata(BaseModel):
     recall_topk: int = 50
     fusion_strategy: str = "rrf"
     reranker_model_id: str | None = "BAAI/bge-reranker-v2-m3"
+    pipeline_status: str = "not_run"
 
 
 class SearchResponse(BaseModel):

@@ -9,6 +9,7 @@ from zyfangji_retrieval.domain.search_models import (
     SearchResponse,
 )
 from zyfangji_retrieval.search.query import build_patient_query
+from zyfangji_retrieval.search.service import SearchServiceError
 
 
 def test_patient_search_request_defaults_topk_to_10() -> None:
@@ -173,3 +174,31 @@ def test_search_route_calls_attached_search_service() -> None:
 
     assert response.status_code == 200
     assert response.json()["query_text"] == "主症:\n发热恶寒"
+
+
+class _FailingSearchService:
+    def search(self, request: PatientSearchRequest) -> SearchResponse:
+        raise SearchServiceError(
+            code="embedding_provider_unavailable",
+            message="Embedding provider is unavailable.",
+            details={"provider": "bge_m3"},
+        )
+
+
+def test_search_route_returns_typed_service_error() -> None:
+    app = create_app()
+    app.state.search_service = _FailingSearchService()
+    client = TestClient(app)
+
+    response = client.post("/api/search", json={"main_symptom": "发热恶寒"})
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": {
+            "error": {
+                "code": "embedding_provider_unavailable",
+                "message": "Embedding provider is unavailable.",
+                "details": {"provider": "bge_m3"},
+            }
+        }
+    }
