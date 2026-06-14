@@ -55,9 +55,9 @@ def test_app_settings_exposes_index_defaults() -> None:
     assert settings.qdrant_url == "http://localhost:6333"
     assert settings.qdrant_collection_prefix == "zyfangji_entries"
     assert settings.qdrant_alias == "zyfangji_entries_active"
-    assert settings.embedding_provider == "deterministic"
-    assert settings.embedding_model_id == "deterministic-bge-m3-compatible"
-    assert settings.embedding_vector_size == 4
+    assert settings.embedding_provider == "bge_m3"
+    assert settings.embedding_model_id == "BAAI/bge-m3"
+    assert settings.embedding_vector_size == 1024
     assert settings.bm25_index_root.as_posix() == "var/indexes/bm25"
     assert settings.api_title == "Zyfangji Retrieval Service"
 
