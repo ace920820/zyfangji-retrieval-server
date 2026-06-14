@@ -19,6 +19,7 @@ class WorkbookRows:
     source_sheet: str
     headers: list[str]
     rows: list[WorkbookRow]
+    blank_rows: int = 0
 
 
 def read_shanghanlun_workbook(path: Path, sheet_name: str | int | None = 0) -> WorkbookRows:
@@ -47,12 +48,14 @@ def read_shanghanlun_workbook(path: Path, sheet_name: str | int | None = 0) -> W
         )
 
     rows: list[WorkbookRow] = []
+    blank_rows = 0
     for index, record in df.iterrows():
         raw_record = {
             header: str(record.get(header, "")).strip()
             for header in SOURCE_HEADERS
         }
         if not any(raw_record.values()):
+            blank_rows += 1
             continue
         source_row = int(index) + 4
         rows.append(
@@ -68,4 +71,5 @@ def read_shanghanlun_workbook(path: Path, sheet_name: str | int | None = 0) -> W
         source_sheet=resolved_sheet,
         headers=headers,
         rows=rows,
+        blank_rows=blank_rows,
     )
