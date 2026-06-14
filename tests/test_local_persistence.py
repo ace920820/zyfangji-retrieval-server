@@ -92,7 +92,7 @@ def test_save_import_can_load_entry_by_id_and_latest_batch(tmp_path: Path) -> No
     assert latest_batch["metadata_version"] == "local-v1"
 
 
-def test_save_import_upserts_entry_without_duplicate_and_updates_timestamp(
+def test_save_import_snapshots_reimports_and_loads_latest_entry(
     tmp_path: Path,
 ) -> None:
     row, entry = _sample_row_and_entry()
@@ -112,14 +112,24 @@ def test_save_import_upserts_entry_without_duplicate_and_updates_timestamp(
 
     with store.connect() as connection:
         rows = connection.execute(
-            "select created_at, updated_at, retrieval_text from knowledge_entries where entry_id = ?",
+            """
+            select batch_id, created_at, updated_at, retrieval_text
+            from knowledge_entries
+            where entry_id = ?
+            order by batch_id
+            """,
             (entry.entry_id,),
         ).fetchall()
 
-    assert len(rows) == 1
+    loaded = store.load_entry(entry.entry_id)
+
+    assert len(rows) == 2
+    assert rows[0]["batch_id"] == "local-first"
+    assert rows[1]["batch_id"] == "local-second"
     assert rows[0]["created_at"] == first["created_at"]
-    assert rows[0]["updated_at"] >= first["updated_at"]
-    assert rows[0]["retrieval_text"].endswith("复核")
+    assert rows[1]["updated_at"] >= first["updated_at"]
+    assert rows[1]["retrieval_text"].endswith("复核")
+    assert loaded == updated_entry
 
 
 def test_raw_records_are_queryable_by_source_row_and_preserve_all_source_fields(
@@ -179,6 +189,24 @@ def test_reimporting_same_workbook_preserves_entry_id_set(tmp_path: Path) -> Non
     assert second_report.index_version.startswith("local-")
     assert first_ids == second_ids
     assert len(second_ids) == second_report.indexed_count
+
+
+def test_reimporting_same_workbook_keeps_each_index_version_rebuildable(
+    tmp_path: Path,
+) -> None:
+    db_path = tmp_path / "metadata.db"
+
+    first_report = import_workbook_to_metadata(SAMPLE_WORKBOOK, db_path)
+    second_report = import_workbook_to_metadata(SAMPLE_WORKBOOK, db_path)
+
+    first_entries = load_entries_for_rebuild(db_path, first_report.index_version)
+    second_entries = load_entries_for_rebuild(db_path, second_report.index_version)
+
+    assert len(first_entries) == first_report.indexed_count
+    assert len(second_entries) == second_report.indexed_count
+    assert {entry.entry_id for entry in first_entries} == {
+        entry.entry_id for entry in second_entries
+    }
 
 
 def test_local_persistence_import_does_not_require_customer_mysql() -> None:

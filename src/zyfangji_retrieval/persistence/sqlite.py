@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Sequence
 
+from zyfangji_retrieval.domain.ids import content_fingerprint
 from zyfangji_retrieval.domain.models import KnowledgeEntry
 from zyfangji_retrieval.ingestion.excel_reader import WorkbookRow
 from zyfangji_retrieval.ingestion.reports import ImportReport, RowIssue
@@ -65,8 +66,8 @@ class SQLiteMetadataStore:
                 );
 
                 create table if not exists knowledge_entries (
-                    entry_id text primary key,
                     batch_id text not null,
+                    entry_id text not null,
                     source_row integer not null,
                     normalized_json text not null,
                     retrieval_text text not null,
@@ -74,7 +75,8 @@ class SQLiteMetadataStore:
                     formula_mapping_status text not null,
                     content_fingerprint text not null,
                     created_at text not null,
-                    updated_at text not null
+                    updated_at text not null,
+                    primary key (batch_id, entry_id)
                 );
 
                 create table if not exists row_issues (
@@ -86,6 +88,70 @@ class SQLiteMetadataStore:
                 );
                 """
             )
+            self._migrate_legacy_knowledge_entries(connection)
+
+    def _migrate_legacy_knowledge_entries(self, connection: sqlite3.Connection) -> None:
+        columns = connection.execute("pragma table_info(knowledge_entries)").fetchall()
+        primary_key_columns = {
+            column["name"]: column["pk"] for column in columns if column["pk"] > 0
+        }
+        if primary_key_columns != {"batch_id": 1, "entry_id": 2}:
+            connection.executescript(
+                """
+                alter table knowledge_entries rename to knowledge_entries_legacy;
+
+                create table knowledge_entries (
+                    batch_id text not null,
+                    entry_id text not null,
+                    source_row integer not null,
+                    normalized_json text not null,
+                    retrieval_text text not null,
+                    formula_raw text not null,
+                    formula_mapping_status text not null,
+                    content_fingerprint text not null,
+                    created_at text not null,
+                    updated_at text not null,
+                    primary key (batch_id, entry_id)
+                );
+
+                insert or replace into knowledge_entries (
+                    batch_id,
+                    entry_id,
+                    source_row,
+                    normalized_json,
+                    retrieval_text,
+                    formula_raw,
+                    formula_mapping_status,
+                    content_fingerprint,
+                    created_at,
+                    updated_at
+                )
+                select
+                    batch_id,
+                    entry_id,
+                    source_row,
+                    normalized_json,
+                    retrieval_text,
+                    formula_raw,
+                    formula_mapping_status,
+                    content_fingerprint,
+                    created_at,
+                    updated_at
+                from knowledge_entries_legacy;
+
+                drop table knowledge_entries_legacy;
+                """
+            )
+
+    def _entry_fingerprint(self, entry: KnowledgeEntry) -> str:
+        return content_fingerprint(
+            [
+                entry.model_dump_json(),
+                entry.retrieval_text,
+                entry.formula_raw,
+                entry.formula_mapping_status,
+            ]
+        )
 
     def save_import(
         self,
@@ -148,40 +214,37 @@ class SQLiteMetadataStore:
                         for row in raw_rows
                     ],
                 )
-                for entry in entries:
-                    existing = connection.execute(
-                        "select created_at from knowledge_entries where entry_id = ?",
-                        (entry.entry_id,),
-                    ).fetchone()
-                    created_at = existing["created_at"] if existing is not None else now
-                    connection.execute(
-                        """
-                        insert or replace into knowledge_entries (
-                            entry_id,
-                            batch_id,
-                            source_row,
-                            normalized_json,
-                            retrieval_text,
-                            formula_raw,
-                            formula_mapping_status,
-                            content_fingerprint,
-                            created_at,
-                            updated_at
-                        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """,
+                connection.executemany(
+                    """
+                    insert or replace into knowledge_entries (
+                        batch_id,
+                        entry_id,
+                        source_row,
+                        normalized_json,
+                        retrieval_text,
+                        formula_raw,
+                        formula_mapping_status,
+                        content_fingerprint,
+                        created_at,
+                        updated_at
+                    ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    [
                         (
-                            entry.entry_id,
                             batch_id,
+                            entry.entry_id,
                             entry.source_row,
                             entry.model_dump_json(),
                             entry.retrieval_text,
                             entry.formula_raw,
                             entry.formula_mapping_status,
-                            entry.entry_id,
-                            created_at,
+                            self._entry_fingerprint(entry),
                             now,
-                        ),
-                    )
+                            now,
+                        )
+                        for entry in entries
+                    ],
+                )
                 connection.executemany(
                     """
                     insert into row_issues (
@@ -207,7 +270,14 @@ class SQLiteMetadataStore:
     def load_entry(self, entry_id: str) -> KnowledgeEntry | None:
         with self.connect() as connection:
             row = connection.execute(
-                "select normalized_json from knowledge_entries where entry_id = ?",
+                """
+                select ke.normalized_json
+                from knowledge_entries ke
+                join import_batches ib on ib.batch_id = ke.batch_id
+                where ke.entry_id = ?
+                order by ib.created_at desc, ke.batch_id desc
+                limit 1
+                """,
                 (entry_id,),
             ).fetchone()
         if row is None:
@@ -215,15 +285,32 @@ class SQLiteMetadataStore:
         return KnowledgeEntry.model_validate_json(row["normalized_json"])
 
     def load_entries(self, index_version: str | None = None) -> list[KnowledgeEntry]:
-        query = "select normalized_json from knowledge_entries"
+        query = "select ke.normalized_json from knowledge_entries ke"
         params: tuple[str, ...] = ()
         if index_version is not None:
             query += """
-                where batch_id in (
+                where ke.batch_id in (
                     select batch_id from import_batches where index_version = ?
                 )
             """
             params = (index_version,)
+        else:
+            query += """
+                join import_batches ib on ib.batch_id = ke.batch_id
+                where not exists (
+                    select 1
+                    from knowledge_entries newer_ke
+                    join import_batches newer_ib on newer_ib.batch_id = newer_ke.batch_id
+                    where newer_ke.entry_id = ke.entry_id
+                      and (
+                          newer_ib.created_at > ib.created_at
+                          or (
+                              newer_ib.created_at = ib.created_at
+                              and newer_ke.batch_id > ke.batch_id
+                          )
+                      )
+                )
+            """
         query += " order by source_row, entry_id"
         with self.connect() as connection:
             rows = connection.execute(query, params).fetchall()
