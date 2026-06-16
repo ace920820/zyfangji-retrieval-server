@@ -227,6 +227,56 @@ def demo_preset(
     _render_demo_search(payload, json_output=json_output, limit=limit)
 
 
+@demo_app.command("interactive")
+def demo_interactive(
+    mode: str = typer.Option("offline", "--mode", case_sensitive=False),
+    base_url: str | None = typer.Option(None, "--base-url"),
+    topk: int = typer.Option(5, "--topk", min=1, max=50),
+) -> None:
+    typer.echo("中医方剂检索 CLI")
+    typer.echo("每轮输入患者表现；可直接回车跳过字段。输入 q 退出。")
+    typer.echo("结果仅作为检索参考，不是诊断、医疗建议或自动处方。")
+    while True:
+        main_symptom = _prompt_optional("主症", allow_empty=True)
+        if main_symptom is None:
+            break
+        symptoms_text = _prompt_optional("其他症状，多个用逗号分隔", allow_empty=True)
+        if symptoms_text is None:
+            break
+        tongue = _prompt_optional("舌象", allow_empty=True)
+        if tongue is None:
+            break
+        pulse = _prompt_optional("脉象", allow_empty=True)
+        if pulse is None:
+            break
+        syndrome = _prompt_optional("证型", allow_empty=True)
+        if syndrome is None:
+            break
+
+        if not any([main_symptom, symptoms_text, tongue, pulse, syndrome]):
+            typer.echo("输入无效: 至少填写一项症状、舌象、脉象或证型。")
+            continue
+
+        symptoms = _split_symptoms(symptoms_text)
+        try:
+            request = PatientSearchRequest(
+                main_symptom=main_symptom,
+                symptoms=symptoms,
+                tongue=tongue,
+                pulse=pulse,
+                syndrome=syndrome,
+                topk=topk,
+            )
+        except ValueError as exc:
+            typer.echo(f"输入无效: {exc}")
+            continue
+
+        payload = _run_demo_search(request, mode=mode, base_url=base_url)
+        _render_demo_search(payload, json_output=False, limit=topk)
+        typer.echo("")
+    typer.echo("已退出。")
+
+
 app.add_typer(demo_app, name="demo")
 
 
@@ -305,6 +355,22 @@ def _preset_request(name: str) -> PatientSearchRequest:
         return PatientSearchRequest.model_validate(presets[name])
     except KeyError as exc:
         raise typer.BadParameter(f"unknown preset: {name}") from exc
+
+
+def _prompt_optional(label: str, *, allow_empty: bool = False) -> str | None:
+    value = typer.prompt(label, default="", show_default=False).strip()
+    if value.lower() in {"q", "quit", "exit"}:
+        return None
+    if value:
+        return value
+    return "" if allow_empty else None
+
+
+def _split_symptoms(value: str | None) -> list[str]:
+    if not value:
+        return []
+    normalized = value.replace("，", ",").replace("、", ",")
+    return [part.strip() for part in normalized.split(",") if part.strip()]
 
 
 if __name__ == "__main__":

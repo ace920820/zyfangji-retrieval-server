@@ -68,3 +68,30 @@ def test_demo_preset_rejects_unknown_name() -> None:
 
     assert result.exit_code != 0
     assert "unknown preset: missing" in result.output
+
+
+def test_demo_interactive_accepts_one_query_then_quits() -> None:
+    result = runner.invoke(
+        app,
+        ["demo", "interactive", "--topk", "2"],
+        input="头痛\n发热，恶风\n舌淡苔白\n脉浮紧\n太阳伤寒证\nq\n",
+    )
+
+    assert result.exit_code == 0
+    assert "中医方剂检索 CLI" in result.output
+    assert "结果仅作为检索参考" in result.output
+    assert "麻黄汤" in result.output
+    assert "桂枝汤" in result.output
+    assert "已退出。" in result.output
+
+
+def test_demo_interactive_rejects_empty_presentation_and_continues() -> None:
+    result = runner.invoke(
+        app,
+        ["demo", "interactive"],
+        input="\n\n\n\n\nq\n",
+    )
+
+    assert result.exit_code == 0
+    assert "输入无效:" in result.output
+    assert "已退出。" in result.output
