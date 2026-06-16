@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Index Lifecycle and Status** - Build Qdrant/BM25 indexes from local metadata and expose readiness/status.
 - [x] **Phase 3: Hybrid Search and Rerank API** - Expose the patient search endpoint with BM25, vector recall, fusion, rerank, and evidence-rich results.
 - [x] **Phase 4: Quality, Safety, and Performance Validation** - Lock in regression tests, score/safety boundaries, and MVP latency checks.
-- [ ] **Phase 5: Documentation and Demo Delivery** - Package OpenAPI docs, integration examples, Docker Compose, and a minimal reviewer demo flow.
+- [x] **Phase 5: Documentation and Demo Delivery** - Package OpenAPI docs, integration examples, Docker Compose, and a minimal reviewer demo flow. (completed 2026-06-16)
 
 ## Phase Details
 
@@ -100,9 +100,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Publish API docs, OpenAPI route checks, Java examples, and CLI import clarification
-- [ ] 05-02-PLAN.md — Build reviewer demo flow and offline/live smoke sample client
-- [ ] 05-03-PLAN.md — Package environment, Docker Compose, deployment runbook, privacy, and out-of-scope documentation
+- [x] 05-01-PLAN.md — Publish API docs, OpenAPI route checks, Java examples, and CLI import clarification
+- [x] 05-02-PLAN.md — Build reviewer demo flow and offline/live smoke sample client
+- [x] 05-03-PLAN.md — Package environment, Docker Compose, deployment runbook, privacy, and out-of-scope documentation
 **UI hint**: yes
 
 ## Progress
@@ -116,4 +116,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Index Lifecycle and Status | 3/3 | Complete | 2026-06-14 |
 | 3. Hybrid Search and Rerank API | 3/3 | Complete | 2026-06-14 |
 | 4. Quality, Safety, and Performance Validation | 2/2 | Complete | 2026-06-16 |
-| 5. Documentation and Demo Delivery | 0/3 | Planned | - |
+| 5. Documentation and Demo Delivery | 3/3 | Complete | 2026-06-16 |
