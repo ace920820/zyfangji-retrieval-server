@@ -84,8 +84,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: Add automated ingestion, contract, query, response, provider-failure, and safety tests
-- [ ] 04-02: Add smoke/regression query set and MVP search-latency validation
+- [ ] 04-01-PLAN.md — Add automated ingestion, contract, query, response, provider-failure, stale-index, and safety tests
+- [ ] 04-02-PLAN.md — Add smoke/regression query set and MVP search-latency validation
 
 ### Phase 5: Documentation and Demo Delivery
 **Goal**: Reviewers and the Java/backend/frontend team can run the service, inspect API contracts, import sample data, and execute search flows without shell-only tribal knowledge.
