@@ -1,0 +1,101 @@
+[
+  {
+    "id": "symptom_headache",
+    "category": "symptom",
+    "request": {
+      "main_symptom": "头痛",
+      "topk": 5
+    },
+    "expect": {
+      "min_results": 1,
+      "must_include_any_formula": ["麻黄汤"],
+      "must_have_fields": ["results.0.source", "results.0.formula_raw", "results.0.evidence.source_article"],
+      "banned_fields": ["diagnosis", "diagnosis_probability", "prescription", "prescription_certainty", "medical_advice", "autonomous_diagnosis", "autonomous_prescription", "treatment_plan", "confidence"]
+    }
+  },
+  {
+    "id": "symptom_fever_aversion_wind",
+    "category": "symptom",
+    "request": {
+      "main_symptom": "发热",
+      "symptoms": ["恶风"],
+      "topk": 5
+    },
+    "expect": {
+      "min_results": 1,
+      "must_have_fields": ["results.0.source", "results.0.formula_mapping_status", "results.0.evidence"],
+      "banned_fields": ["diagnosis", "diagnosis_probability", "prescription", "prescription_certainty", "medical_advice", "autonomous_diagnosis", "autonomous_prescription", "treatment_plan", "confidence"]
+    }
+  },
+  {
+    "id": "symptom_no_sweat_pulse",
+    "category": "symptom_pulse",
+    "request": {
+      "symptoms": ["无汗"],
+      "pulse": "脉浮紧",
+      "topk": 5
+    },
+    "expect": {
+      "min_results": 1,
+      "must_include_any_formula": ["麻黄汤"],
+      "must_have_fields": ["results.0.evidence.pulse", "results.0.evidence.contraindication"],
+      "banned_fields": ["diagnosis", "diagnosis_probability", "prescription", "prescription_certainty", "medical_advice", "autonomous_diagnosis", "autonomous_prescription", "treatment_plan", "confidence"]
+    }
+  },
+  {
+    "id": "tongue_pulse_combo",
+    "category": "tongue_pulse",
+    "request": {
+      "tongue": "舌淡苔白",
+      "pulse": "脉浮紧",
+      "topk": 5
+    },
+    "expect": {
+      "min_results": 1,
+      "must_have_fields": ["query.text", "results.0.evidence.tongue", "results.0.evidence.pulse"],
+      "banned_fields": ["diagnosis", "diagnosis_probability", "prescription", "prescription_certainty", "medical_advice", "autonomous_diagnosis", "autonomous_prescription", "treatment_plan", "confidence"]
+    }
+  },
+  {
+    "id": "formula_mahuang",
+    "category": "formula",
+    "request": {
+      "main_symptom": "麻黄汤",
+      "topk": 5
+    },
+    "expect": {
+      "min_results": 1,
+      "must_include_any_formula": ["麻黄汤"],
+      "must_have_fields": ["results.0.formula_raw", "results.0.formula_mentions", "results.0.formula_mapping_status"],
+      "banned_fields": ["diagnosis", "diagnosis_probability", "prescription", "prescription_certainty", "medical_advice", "autonomous_diagnosis", "autonomous_prescription", "treatment_plan", "confidence"]
+    }
+  },
+  {
+    "id": "article_reference",
+    "category": "article",
+    "request": {
+      "main_symptom": "第35条",
+      "syndrome": "太阳伤寒证",
+      "topk": 5
+    },
+    "expect": {
+      "min_results": 1,
+      "must_have_fields": ["results.0.source.article", "results.0.evidence.source_article", "results.0.evidence.syndrome"],
+      "banned_fields": ["diagnosis", "diagnosis_probability", "prescription", "prescription_certainty", "medical_advice", "autonomous_diagnosis", "autonomous_prescription", "treatment_plan", "confidence"]
+    }
+  },
+  {
+    "id": "broad_sparse",
+    "category": "broad_sparse",
+    "request": {
+      "main_symptom": "寒",
+      "topk": 5
+    },
+    "expect": {
+      "min_results": 1,
+      "must_have_warnings": ["query_too_sparse", "query_broad"],
+      "must_have_fields": ["warnings", "score_semantics"],
+      "banned_fields": ["diagnosis", "diagnosis_probability", "prescription", "prescription_certainty", "medical_advice", "autonomous_diagnosis", "autonomous_prescription", "treatment_plan", "confidence"]
+    }
+  }
+]
