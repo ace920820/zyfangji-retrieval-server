@@ -79,3 +79,31 @@ created: 2026-06-16
 - [x] `nyquist_compliant: true` set in frontmatter after execution validates all requirements
 
 **Approval:** automated validation complete; live/manual checks tracked in `04-HUMAN-UAT.md`
+
+---
+
+## Validation Audit 2026-06-16T13:35:33Z
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+
+Coverage classification:
+
+| Requirement | Status | Evidence |
+|-------------|--------|----------|
+| QUAL-01 | COVERED | `tests/test_quality_regression_contract.py` covers workbook parsing, canonical entry shape, retrieval text, patient query construction, and response schema. |
+| QUAL-02 | COVERED | `tests/fixtures/smoke_queries.json` and `tests/test_smoke_queries.py` cover symptom, tongue, pulse, formula, article/source, and broad/sparse smoke cases. |
+| QUAL-03 | COVERED | Quality and smoke tests require source, evidence, contraindication, and western-medicine-priority fields where present. |
+| QUAL-04 | COVERED | Recursive banned-key checks reject generated diagnosis, medical advice, autonomous prescription, treatment plan, and confidence fields. |
+| QUAL-05 | COVERED | `scripts/search_latency.py` reports offline/live P50/P95 latency JSON with threshold pass/fail; live demo-host checks remain manual-only. |
+
+Audit verification:
+
+- `PYTHONDONTWRITEBYTECODE=1 UV_PROJECT_ENVIRONMENT=/tmp/zyfangji-retrieval-venv uv run pytest tests/test_quality_regression_contract.py tests/test_smoke_queries.py -q` -> 14 passed, 1 warning.
+- `UV_PROJECT_ENVIRONMENT=/tmp/zyfangji-retrieval-venv uv run python scripts/search_latency.py --queries tests/fixtures/smoke_queries.json --mode offline --runs 2 --warmups 1` -> thresholds passed; P50 0.066 ms, P95 0.106 ms.
+- `UV_PROJECT_ENVIRONMENT=/tmp/zyfangji-retrieval-venv uv run ruff check tests/test_quality_regression_contract.py tests/test_smoke_queries.py scripts/search_latency.py` -> All checks passed.
+
+Decision: Phase 4 remains Nyquist-compliant. No additional validation tests were generated.
