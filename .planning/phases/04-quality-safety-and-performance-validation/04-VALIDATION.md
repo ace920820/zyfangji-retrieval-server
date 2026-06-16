@@ -1,9 +1,9 @@
 ---
 phase: 04
 slug: quality-safety-and-performance-validation
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-06-16
 ---
 
@@ -39,11 +39,11 @@ created: 2026-06-16
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 04-01-01 | 01 | 1 | QUAL-01 | T-04-01 / regression coverage | Cross-cutting test proves workbook parsing, canonical normalization, stable IDs, retrieval text, query construction, and response schema remain coherent without duplicating Phase 1-3 unit tests. | unit/contract | `pytest tests/test_quality_regression_contract.py -q` | no - Wave 0 | pending |
-| 04-01-02 | 01 | 1 | QUAL-03 / QUAL-04 | T-04-02 / medical safety boundary | API/demo-style responses foreground source/evidence/contraindication fields and do not expose generated diagnosis, advice, confidence, or autonomous prescription fields. | safety/negative contract | `pytest tests/test_quality_regression_contract.py tests/test_search_api.py -q` | no - Wave 0 | pending |
-| 04-01-03 | 01 | 1 | QUAL-04 | T-04-03 / provider failure leakage | Provider/vector/reranker/stale-index failures produce stable sanitized errors and do not leak patient text or present stale partial results. | API/service failure | `pytest tests/test_quality_regression_contract.py tests/test_search_pipeline.py tests/test_status_api.py -q` | no - Wave 0 | pending |
-| 04-02-01 | 02 | 2 | QUAL-02 / QUAL-03 / QUAL-04 | T-04-04 / smoke regression | Checked-in smoke queries for headache, fever, aversion to wind, no sweat, tongue, pulse, formula, article/broad query paths return comparable ranked results and safety fields. | regression/smoke | `pytest tests/test_smoke_queries.py -q` | no - Wave 0 | pending |
-| 04-02-02 | 02 | 2 | QUAL-05 | T-04-05 / latency availability | Repeatable latency harness reports P50/P95 for indexed `/api/search`, excludes import/corpus embedding, and separates offline deterministic from live provider mode. | performance report | `python scripts/search_latency.py --queries tests/fixtures/smoke_queries.json --mode offline` | no - Wave 0 | pending |
+| 04-01-01 | 01 | 1 | QUAL-01 | T-04-01 / regression coverage | Cross-cutting test proves workbook parsing, canonical normalization, stable IDs, retrieval text, query construction, and response schema remain coherent without duplicating Phase 1-3 unit tests. | unit/contract | `pytest tests/test_quality_regression_contract.py -q` | yes | green |
+| 04-01-02 | 01 | 1 | QUAL-03 / QUAL-04 | T-04-02 / medical safety boundary | API/demo-style responses foreground source/evidence/contraindication fields and do not expose generated diagnosis, advice, confidence, or autonomous prescription fields. | safety/negative contract | `pytest tests/test_quality_regression_contract.py tests/test_search_api.py -q` | yes | green |
+| 04-01-03 | 01 | 1 | QUAL-04 | T-04-03 / provider failure leakage | Provider/vector/reranker/stale-index failures produce stable sanitized errors and do not leak patient text or present stale partial results. | API/service failure | `pytest tests/test_quality_regression_contract.py tests/test_search_pipeline.py tests/test_status_api.py -q` | yes | green |
+| 04-02-01 | 02 | 2 | QUAL-02 / QUAL-03 / QUAL-04 | T-04-04 / smoke regression | Checked-in smoke queries for headache, fever, aversion to wind, no sweat, tongue, pulse, formula, article/broad query paths return comparable ranked results and safety fields. | regression/smoke | `pytest tests/test_smoke_queries.py -q` | yes | green |
+| 04-02-02 | 02 | 2 | QUAL-05 | T-04-05 / latency availability | Repeatable latency harness reports P50/P95 for indexed `/api/search`, excludes import/corpus embedding, and separates offline deterministic from live provider mode. | performance report | `python scripts/search_latency.py --queries tests/fixtures/smoke_queries.json --mode offline` | yes | green |
 
 *Status: pending / green / red / flaky*
 
@@ -51,11 +51,11 @@ created: 2026-06-16
 
 ## Wave 0 Requirements
 
-- [ ] `tests/fixtures/smoke_queries.json` - smoke/regression query definitions for QUAL-02 and QUAL-05.
-- [ ] `tests/test_quality_regression_contract.py` - cross-cutting regression, evidence visibility, safety negative assertions, and handoff failure checks.
-- [ ] `tests/test_smoke_queries.py` - offline smoke query runner over deterministic in-memory service behavior.
-- [ ] `scripts/search_latency.py` - JSON-emitting P50/P95 latency harness with offline and live modes.
-- [ ] Optional `04-HUMAN-UAT.md` or VERIFICATION human section - live Qdrant/BGE-M3/reranker latency and ranking-quality checks when environment is available.
+- [x] `tests/fixtures/smoke_queries.json` - smoke/regression query definitions for QUAL-02 and QUAL-05.
+- [x] `tests/test_quality_regression_contract.py` - cross-cutting regression, evidence visibility, safety negative assertions, and handoff failure checks.
+- [x] `tests/test_smoke_queries.py` - offline smoke query runner over deterministic in-memory service behavior.
+- [x] `scripts/search_latency.py` - JSON-emitting P50/P95 latency harness with offline and live modes.
+- [x] Optional `04-HUMAN-UAT.md` or VERIFICATION human section - live Qdrant/BGE-M3/reranker latency and ranking-quality checks when environment is available.
 
 ---
 
@@ -70,12 +70,12 @@ created: 2026-06-16
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all missing references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 20s for automated suite
-- [ ] Latency report command exists and prints P50/P95 JSON
-- [ ] `nyquist_compliant: true` set in frontmatter after execution validates all requirements
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all missing references
+- [x] No watch-mode flags
+- [x] Feedback latency < 20s for automated suite
+- [x] Latency report command exists and prints P50/P95 JSON
+- [x] `nyquist_compliant: true` set in frontmatter after execution validates all requirements
 
-**Approval:** pending
+**Approval:** automated validation complete; live/manual checks tracked in `04-HUMAN-UAT.md`

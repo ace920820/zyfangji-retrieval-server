@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_execute
-stopped_at: Phase 04 planning complete; ready to execute.
-last_updated: "2026-06-16T13:13:18Z"
-last_activity: 2026-06-16 -- Phase 4 planning complete
+status: phase_complete
+stopped_at: Phase 04 complete; Phase 05 ready to plan.
+last_updated: "2026-06-16T13:32:00Z"
+last_activity: 2026-06-16 -- Phase 4 execution and verification complete
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 14
-  completed_plans: 9
-  percent: 64
+  completed_plans: 11
+  percent: 79
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-14)
 
 **Core value:** 医生输入患者症状后，系统必须能稳定返回有典籍依据、排序合理、可回连业务方剂库的推荐方剂列表。
-**Current focus:** Phase 04 — quality-safety-and-performance-validation
+**Current focus:** Phase 05 — documentation-and-demo-delivery
 
 ## Current Position
 
-Phase: 04 (quality-safety-and-performance-validation) — READY TO EXECUTE
-Plan: 0 of 2
-Status: Ready to execute
-Last activity: 2026-06-16 -- Phase 4 planning complete
+Phase: 05 (documentation-and-demo-delivery) — READY TO PLAN
+Plan: 0 of 3
+Status: Phase 4 complete; Phase 5 ready to plan
+Last activity: 2026-06-16 -- Phase 4 execution and verification complete
 
-Progress: [██████░░░░] 64%
+Progress: [████████░░] 79%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 9
+- Total plans completed: 11
 - Average duration: -
 - Total execution time: 0.0 hours
 
@@ -47,7 +47,7 @@ Progress: [██████░░░░] 64%
 | 1. Local Data Contract and Ingestion | 3/3 | - | - |
 | 2. Index Lifecycle and Status | 3/3 | - | - |
 | 3. Hybrid Search and Rerank API | 3/3 | 44min | 15min |
-| 4. Quality, Safety, and Performance Validation | 0/2 | - | - |
+| 4. Quality, Safety, and Performance Validation | 2/2 | 24min | 12min |
 | 5. Documentation and Demo Delivery | 0/3 | - | - |
 
 **Recent Trend:**
@@ -59,6 +59,8 @@ Progress: [██████░░░░] 64%
 | Phase 03-hybrid-search-and-rerank-api P01 | 7min | 3 tasks | 9 files |
 | Phase 03-hybrid-search-and-rerank-api P02 | 24min | 3 tasks | 13 files |
 | Phase 03-hybrid-search-and-rerank-api P03 | 13min | 3 tasks | 9 files |
+| Phase 04-quality-safety-and-performance-validation P01 | 8min | 3 tasks | 1 file |
+| Phase 04-quality-safety-and-performance-validation P02 | 16min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -79,6 +81,8 @@ Recent decisions affecting current work:
 - [Phase 03-hybrid-search-and-rerank-api]: BGE-M3 runtime mode fails typed when endpoint configuration is missing or unavailable; deterministic embeddings are only selected by explicit provider setting.
 - [Phase 03-hybrid-search-and-rerank-api]: Reranker is required by default, with a configured degraded fused-results fallback only when reranker_required is false.
 - [Phase 03-hybrid-search-and-rerank-api]: Search responses now use query/results/warnings/metadata/score_semantics with retrieval_score and signal_scores, not legacy match_score/scores/pipeline names.
+- [Phase 04-quality-safety-and-performance-validation]: Smoke query expectations assert stable fields, warning codes, and formula anchors rather than exact scores or exact full ranking.
+- [Phase 04-quality-safety-and-performance-validation]: Latency measurement defaults to deterministic offline execution; live `/api/search` timing is opt-in with `--mode live --base-url`.
 
 ### Pending Todos
 
@@ -88,11 +92,11 @@ None yet.
 
 - [Phase 2 execution]: Real BGE-M3 provider mode, model hosting, quota, latency, and machine resources can remain config-driven; Phase 2 plans use deterministic provider tests and explicit reranker `not_configured` status.
 - [Phase 3]: Business formulary mapping table may be unavailable; v1 must allow `code: null` with explicit mapping status.
-- [Phase 4]: Representative doctor queries are needed to make regression tests meaningful beyond generic smoke queries.
+- [Phase 4]: Live Qdrant/BGE-M3/reranker latency and domain ranking quality are tracked in `04-HUMAN-UAT.md`.
 - [Phase 5]: Demo provider-key handling and privacy/logging expectations need confirmation before external exposure.
 
 ## Session Continuity
 
-Last session: 2026-06-16T13:13:18Z
-Stopped at: Phase 04 planning complete; ready to execute.
+Last session: 2026-06-16T13:32:00Z
+Stopped at: Phase 04 complete; Phase 05 ready to plan.
 Resume file: None

@@ -69,11 +69,11 @@ Requirements for the MVP retrieval-service demo and Java-backend integration. MV
 
 ### Quality, Safety, and Performance
 
-- [ ] **QUAL-01**: System includes automated tests for Excel parsing, canonical normalization, stable ID generation, retrieval-text construction, query construction, and response schema.
-- [ ] **QUAL-02**: System includes smoke or regression queries for common sample symptoms such as headache, fever, aversion to wind, no sweat, tongue, and pulse combinations.
-- [ ] **QUAL-03**: System foregrounds source evidence and contraindication fields in API/demo output to support physician review.
-- [ ] **QUAL-04**: System keeps generated medical advice, autonomous diagnosis, and autonomous prescription recommendations out of v1 responses.
-- [ ] **QUAL-05**: System targets indexed-search latency of P50 < 500ms and P95 < 1s for the MVP 1000-2000 row dataset, excluding first-time import and embedding generation.
+- [x] **QUAL-01**: System includes automated tests for Excel parsing, canonical normalization, stable ID generation, retrieval-text construction, query construction, and response schema.
+- [x] **QUAL-02**: System includes smoke or regression queries for common sample symptoms such as headache, fever, aversion to wind, no sweat, tongue, and pulse combinations.
+- [x] **QUAL-03**: System foregrounds source evidence and contraindication fields in API/demo output to support physician review.
+- [x] **QUAL-04**: System keeps generated medical advice, autonomous diagnosis, and autonomous prescription recommendations out of v1 responses.
+- [x] **QUAL-05**: System targets indexed-search latency of P50 < 500ms and P95 < 1s for the MVP 1000-2000 row dataset, excluding first-time import and embedding generation.
 
 ## v2 Requirements
 
@@ -176,11 +176,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOC-03 | Phase 5 | Pending |
 | DOC-04 | Phase 5 | Pending |
 | DOC-05 | Phase 5 | Pending |
-| QUAL-01 | Phase 4 | Pending |
-| QUAL-02 | Phase 4 | Pending |
-| QUAL-03 | Phase 4 | Pending |
-| QUAL-04 | Phase 4 | Pending |
-| QUAL-05 | Phase 4 | Pending |
+| QUAL-01 | Phase 4 | Complete |
+| QUAL-02 | Phase 4 | Complete |
+| QUAL-03 | Phase 4 | Complete |
+| QUAL-04 | Phase 4 | Complete |
+| QUAL-05 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 44 total
@@ -196,4 +196,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-06-14*
-*Last updated: 2026-06-14 after Phase 2 verification*
+*Last updated: 2026-06-16 after Phase 4 verification*

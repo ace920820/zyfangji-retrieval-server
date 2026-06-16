@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Local Data Contract and Ingestion** - Convert the real `伤寒论` workbook into stable, auditable local knowledge entries.
 - [x] **Phase 2: Index Lifecycle and Status** - Build Qdrant/BM25 indexes from local metadata and expose readiness/status.
 - [x] **Phase 3: Hybrid Search and Rerank API** - Expose the patient search endpoint with BM25, vector recall, fusion, rerank, and evidence-rich results.
-- [ ] **Phase 4: Quality, Safety, and Performance Validation** - Lock in regression tests, score/safety boundaries, and MVP latency checks.
+- [x] **Phase 4: Quality, Safety, and Performance Validation** - Lock in regression tests, score/safety boundaries, and MVP latency checks.
 - [ ] **Phase 5: Documentation and Demo Delivery** - Package OpenAPI docs, integration examples, Docker Compose, and a minimal reviewer demo flow.
 
 ## Phase Details
@@ -84,8 +84,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Add automated ingestion, contract, query, response, provider-failure, stale-index, and safety tests
-- [ ] 04-02-PLAN.md — Add smoke/regression query set and MVP search-latency validation
+- [x] 04-01-PLAN.md — Add automated ingestion, contract, query, response, provider-failure, stale-index, and safety tests
+- [x] 04-02-PLAN.md — Add smoke/regression query set and MVP search-latency validation
 
 ### Phase 5: Documentation and Demo Delivery
 **Goal**: Reviewers and the Java/backend/frontend team can run the service, inspect API contracts, import sample data, and execute search flows without shell-only tribal knowledge.
@@ -115,5 +115,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Local Data Contract and Ingestion | 3/3 | Complete | 2026-06-14 |
 | 2. Index Lifecycle and Status | 3/3 | Complete | 2026-06-14 |
 | 3. Hybrid Search and Rerank API | 3/3 | Complete | 2026-06-14 |
-| 4. Quality, Safety, and Performance Validation | 0/2 | Not started | - |
+| 4. Quality, Safety, and Performance Validation | 2/2 | Complete | 2026-06-16 |
 | 5. Documentation and Demo Delivery | 0/3 | Not started | - |
