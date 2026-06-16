@@ -100,9 +100,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: Publish OpenAPI docs, Java integration examples, and configuration/deployment documentation
-- [ ] 05-02: Build minimal demo flow or sample client for sample-data import and symptom search
-- [ ] 05-03: Package Docker Compose, smoke flow, and out-of-scope documentation
+- [ ] 05-01-PLAN.md — Publish API docs, OpenAPI route checks, Java examples, and CLI import clarification
+- [ ] 05-02-PLAN.md — Build reviewer demo flow and offline/live smoke sample client
+- [ ] 05-03-PLAN.md — Package environment, Docker Compose, deployment runbook, privacy, and out-of-scope documentation
 **UI hint**: yes
 
 ## Progress
@@ -116,4 +116,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Index Lifecycle and Status | 3/3 | Complete | 2026-06-14 |
 | 3. Hybrid Search and Rerank API | 3/3 | Complete | 2026-06-14 |
 | 4. Quality, Safety, and Performance Validation | 2/2 | Complete | 2026-06-16 |
-| 5. Documentation and Demo Delivery | 0/3 | Not started | - |
+| 5. Documentation and Demo Delivery | 0/3 | Planned | - |

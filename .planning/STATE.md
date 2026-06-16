@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: phase_complete
-stopped_at: Phase 04 complete; Phase 05 ready to plan.
-last_updated: "2026-06-16T13:32:00Z"
-last_activity: 2026-06-16 -- Phase 4 execution and verification complete
+status: ready_to_execute
+stopped_at: Phase 05 planning complete; ready to execute.
+last_updated: "2026-06-16T13:52:04Z"
+last_activity: 2026-06-16 -- Phase 5 planning complete
 progress:
   total_phases: 5
   completed_phases: 4
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-14)
 
 ## Current Position
 
-Phase: 05 (documentation-and-demo-delivery) — READY TO PLAN
+Phase: 05 (documentation-and-demo-delivery) — READY TO EXECUTE
 Plan: 0 of 3
-Status: Phase 4 complete; Phase 5 ready to plan
-Last activity: 2026-06-16 -- Phase 4 execution and verification complete
+Status: Ready to execute
+Last activity: 2026-06-16 -- Phase 5 planning complete
 
 Progress: [████████░░] 79%
 
@@ -83,6 +83,8 @@ Recent decisions affecting current work:
 - [Phase 03-hybrid-search-and-rerank-api]: Search responses now use query/results/warnings/metadata/score_semantics with retrieval_score and signal_scores, not legacy match_score/scores/pipeline names.
 - [Phase 04-quality-safety-and-performance-validation]: Smoke query expectations assert stable fields, warning codes, and formula anchors rather than exact scores or exact full ranking.
 - [Phase 04-quality-safety-and-performance-validation]: Latency measurement defaults to deterministic offline execution; live `/api/search` timing is opt-in with `--mode live --base-url`.
+- [Phase 05-documentation-and-demo-delivery]: Import/rebuild remain v1 CLI-only operator workflows; OpenAPI docs cover the actual HTTP routes `/api/search`, `/status`, `/health/live`, and `/health/ready`.
+- [Phase 05-documentation-and-demo-delivery]: Documentation/demo output must use retrieval/evidence/ranking language and avoid diagnosis, autonomous prescription, medical advice, and confidence claims.
 
 ### Pending Todos
 
@@ -97,6 +99,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-16T13:32:00Z
-Stopped at: Phase 04 complete; Phase 05 ready to plan.
+Last session: 2026-06-16T13:52:04Z
+Stopped at: Phase 05 planning complete; ready to execute.
 Resume file: None
