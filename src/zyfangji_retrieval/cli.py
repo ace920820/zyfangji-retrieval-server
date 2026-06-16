@@ -1,11 +1,16 @@
 import json
 from pathlib import Path
+from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 import typer
 from qdrant_client import QdrantClient
 
 from zyfangji_retrieval.config import get_settings
+from zyfangji_retrieval.demo_service import build_offline_demo_service
 from zyfangji_retrieval.domain.models import KnowledgeEntry
+from zyfangji_retrieval.domain.search_models import PatientSearchRequest
 from zyfangji_retrieval.indexing.bm25_store import BM25IndexStore
 from zyfangji_retrieval.indexing.embeddings import DeterministicEmbeddingProvider
 from zyfangji_retrieval.indexing.lifecycle import IndexLifecycleService
@@ -25,6 +30,7 @@ from zyfangji_retrieval.persistence.sqlite import SQLiteMetadataStore
 
 
 app = typer.Typer(no_args_is_help=True)
+demo_app = typer.Typer(help="User-facing demo search commands.")
 
 
 class LocalQdrantVectorIndex(QdrantVectorIndex):
@@ -182,6 +188,123 @@ def index_status(
     state_store = SQLiteIndexStateStore(db_path)
     status = IndexStatusService(state_store, settings).status()
     typer.echo(status.model_dump_json(indent=2, ensure_ascii=False))
+
+
+@demo_app.command("search")
+def demo_search(
+    main_symptom: str = typer.Option(..., "--main-symptom"),
+    symptom: list[str] = typer.Option([], "--symptom"),
+    tongue: str | None = typer.Option(None, "--tongue"),
+    pulse: str | None = typer.Option(None, "--pulse"),
+    syndrome: str | None = typer.Option(None, "--syndrome"),
+    topk: int = typer.Option(5, "--topk", min=1, max=50),
+    mode: str = typer.Option("offline", "--mode", case_sensitive=False),
+    base_url: str | None = typer.Option(None, "--base-url"),
+    json_output: bool = typer.Option(False, "--json"),
+) -> None:
+    request = PatientSearchRequest(
+        main_symptom=main_symptom,
+        symptoms=symptom,
+        tongue=tongue,
+        pulse=pulse,
+        syndrome=syndrome,
+        topk=topk,
+    )
+    payload = _run_demo_search(request, mode=mode, base_url=base_url)
+    _render_demo_search(payload, json_output=json_output, limit=topk)
+
+
+@demo_app.command("preset")
+def demo_preset(
+    name: str = typer.Option("headache", "--name"),
+    mode: str = typer.Option("offline", "--mode", case_sensitive=False),
+    base_url: str | None = typer.Option(None, "--base-url"),
+    limit: int = typer.Option(3, "--limit", min=1),
+    json_output: bool = typer.Option(False, "--json"),
+) -> None:
+    request = _preset_request(name)
+    payload = _run_demo_search(request, mode=mode, base_url=base_url)
+    _render_demo_search(payload, json_output=json_output, limit=limit)
+
+
+app.add_typer(demo_app, name="demo")
+
+
+def _run_demo_search(
+    request: PatientSearchRequest,
+    *,
+    mode: str,
+    base_url: str | None,
+) -> dict[str, Any]:
+    if mode == "live":
+        if not base_url:
+            raise typer.BadParameter("--base-url is required when --mode live")
+        return _post_live_search(base_url, request)
+    if mode != "offline":
+        raise typer.BadParameter("--mode must be offline or live")
+    return build_offline_demo_service().search(request).model_dump(mode="json")
+
+
+def _post_live_search(base_url: str, request: PatientSearchRequest) -> dict[str, Any]:
+    url = f"{base_url.rstrip('/')}/api/search"
+    http_request = Request(
+        url,
+        data=json.dumps(request.model_dump(mode="json"), ensure_ascii=False).encode("utf-8"),
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        method="POST",
+    )
+    try:
+        with urlopen(http_request, timeout=30) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise typer.BadParameter(f"live search failed with HTTP {exc.code}: {body}") from exc
+    except URLError as exc:
+        raise typer.BadParameter(f"live search failed: {exc.reason}") from exc
+
+
+def _render_demo_search(payload: dict[str, Any], *, json_output: bool, limit: int) -> None:
+    if json_output:
+        typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    typer.echo(f"query: {payload.get('query', {}).get('text', '')}")
+    typer.echo(f"warnings: {', '.join(item.get('code', '') for item in payload.get('warnings', [])) or 'none'}")
+    typer.echo(f"score semantics: {payload.get('score_semantics', '')}")
+    for result in payload.get("results", [])[:limit]:
+        source = result.get("source", {})
+        typer.echo(
+            f"- {result.get('formula_raw', '')} | {source.get('article') or '-'} | "
+            f"score={result.get('retrieval_score', '')}"
+        )
+
+
+def _preset_request(name: str) -> PatientSearchRequest:
+    presets: dict[str, dict[str, object]] = {
+        "headache": {
+            "main_symptom": "头痛",
+            "symptoms": ["发热", "恶风"],
+            "tongue": "舌淡苔白",
+            "pulse": "脉浮紧",
+            "syndrome": "太阳伤寒证",
+            "topk": 5,
+        },
+        "fever": {
+            "main_symptom": "发热恶风",
+            "symptoms": ["无汗"],
+            "tongue": "舌淡",
+            "pulse": "脉浮缓",
+            "syndrome": "太阳中风证",
+            "topk": 5,
+        },
+        "formula": {
+            "main_symptom": "麻黄汤",
+            "topk": 5,
+        },
+    }
+    try:
+        return PatientSearchRequest.model_validate(presets[name])
+    except KeyError as exc:
+        raise typer.BadParameter(f"unknown preset: {name}") from exc
 
 
 if __name__ == "__main__":
