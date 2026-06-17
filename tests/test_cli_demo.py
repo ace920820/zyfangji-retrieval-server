@@ -16,7 +16,18 @@ def test_demo_preset_prints_readable_formula_results() -> None:
     assert result.exit_code == 0
     assert "query:" in result.output
     assert "麻黄汤" in result.output
-    assert "第35条" in result.output
+    assert "article=第35条" in result.output
+    assert "row=1" in result.output
+    assert "signals: bm25=" in result.output
+    assert "vector=" in result.output
+    assert "fused=" in result.output
+    assert "rerank=" in result.output
+    assert "主症: 头痛" in result.output
+    assert "复合症: 头痛 发热 恶风 无汗" in result.output
+    assert "舌象: 舌淡苔白" in result.output
+    assert "脉象: 脉浮紧" in result.output
+    assert "证型: 太阳伤寒证" in result.output
+    assert "禁忌: 阴虚者慎用" in result.output
     assert "score semantics:" in result.output
     assert "not medical confidence" in result.output
 
@@ -81,6 +92,9 @@ def test_demo_interactive_accepts_one_query_then_quits() -> None:
     assert "中医方剂检索 CLI" in result.output
     assert "结果仅作为检索参考" in result.output
     assert "麻黄汤" in result.output
+    assert "signals: bm25=" in result.output
+    assert "主症: 头痛" in result.output
+    assert "舌象: 舌淡苔白" in result.output
     assert "桂枝汤" in result.output
     assert "已退出。" in result.output
 

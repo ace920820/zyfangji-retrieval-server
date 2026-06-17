@@ -1,8 +1,16 @@
+# ruff: noqa: E402
 import json
+import warnings
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+warnings.filterwarnings(
+    "ignore",
+    message="pkg_resources is deprecated as an API.*",
+    category=UserWarning,
+)
 
 import typer
 from qdrant_client import QdrantClient
@@ -320,12 +328,66 @@ def _render_demo_search(payload: dict[str, Any], *, json_output: bool, limit: in
     typer.echo(f"query: {payload.get('query', {}).get('text', '')}")
     typer.echo(f"warnings: {', '.join(item.get('code', '') for item in payload.get('warnings', [])) or 'none'}")
     typer.echo(f"score semantics: {payload.get('score_semantics', '')}")
+    typer.echo("results:")
     for result in payload.get("results", [])[:limit]:
-        source = result.get("source", {})
-        typer.echo(
-            f"- {result.get('formula_raw', '')} | {source.get('article') or '-'} | "
-            f"score={result.get('retrieval_score', '')}"
-        )
+        _render_search_result(result)
+
+
+def _render_search_result(result: dict[str, Any]) -> None:
+    source = result.get("source", {})
+    evidence = result.get("evidence", {})
+    typer.echo(
+        f"{result.get('rank', '-')}. {result.get('formula_raw', '')} "
+        f"| source={source.get('book', '-')}/{source.get('sheet', '-')} "
+        f"row={source.get('row', '-')} article={source.get('article') or '-'}"
+    )
+    typer.echo(
+        f"   score={_fmt_score(result.get('retrieval_score'))} "
+        f"type={result.get('score_type', '-')}"
+    )
+    signal_scores = result.get("signal_scores", {})
+    typer.echo(
+        "   signals: "
+        f"bm25={_fmt_score(signal_scores.get('bm25_score'))}, "
+        f"vector={_fmt_score(signal_scores.get('vector_score'))}, "
+        f"fused={_fmt_score(signal_scores.get('fused_score'))}, "
+        f"rerank={_fmt_score(signal_scores.get('rerank_score'))}"
+    )
+    typer.echo(f"   mapping: {result.get('formula_mapping_status', '-')}")
+    for label, value in _evidence_lines(evidence):
+        typer.echo(f"   {label}: {value}")
+
+
+def _evidence_lines(evidence: dict[str, Any]) -> list[tuple[str, str]]:
+    field_labels = [
+        ("main_symptom", "主症"),
+        ("complex_symptom", "复合症"),
+        ("detail_symptom", "细分症状"),
+        ("alias", "别名"),
+        ("tongue", "舌象"),
+        ("pulse", "脉象"),
+        ("syndrome", "证型"),
+        ("tcm_disease", "中医病名"),
+        ("western_disease", "西医病名"),
+        ("therapy", "治法"),
+        ("contraindication", "禁忌"),
+        ("effect", "功效/评估"),
+        ("western_medicine_priority", "西医优先提示"),
+    ]
+    return [
+        (label, str(value))
+        for field, label in field_labels
+        if (value := evidence.get(field)) not in (None, "", [])
+    ]
+
+
+def _fmt_score(value: Any) -> str:
+    if value is None:
+        return "-"
+    try:
+        return f"{float(value):.4f}"
+    except (TypeError, ValueError):
+        return str(value)
 
 
 def _preset_request(name: str) -> PatientSearchRequest:
