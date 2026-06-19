@@ -16,6 +16,7 @@ from zyfangji_retrieval.search.rerank import (
     DeterministicRerankerProvider,
     DisabledRerankerProvider,
     RerankerProvider,
+    SiliconFlowRerankerProvider,
 )
 from zyfangji_retrieval.search.service import SearchService
 from zyfangji_retrieval.search.vector import VectorRetriever
@@ -42,6 +43,15 @@ async def _validation_exception_handler(
 def build_reranker_provider(settings: AppSettings) -> RerankerProvider:
     if settings.reranker_provider == "bge":
         return BGERerankerProvider(model_id=settings.reranker_model_id)
+    if settings.reranker_provider == "silicon":
+        if not settings.reranker_endpoint_url:
+            raise ValueError("silicon reranker endpoint is not configured")
+        return SiliconFlowRerankerProvider(
+            endpoint_url=settings.reranker_endpoint_url,
+            api_key=settings.reranker_api_key,
+            model_id=settings.reranker_model_id,
+            timeout_seconds=settings.reranker_timeout_seconds,
+        )
     if settings.reranker_provider == "deterministic":
         return DeterministicRerankerProvider()
     if settings.reranker_provider == "disabled":

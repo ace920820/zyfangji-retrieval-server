@@ -26,6 +26,7 @@ from zyfangji_retrieval.search.embedding_factory import build_embedding_provider
 from zyfangji_retrieval.search.rerank import (
     BGERerankerProvider,
     DeterministicRerankerProvider,
+    SiliconFlowRerankerProvider,
     RerankCandidate,
     RerankerProviderError,
 )
@@ -280,11 +281,19 @@ def test_embedding_provider_deterministic_fallback_is_explicit() -> None:
 
 def test_reranker_provider_bge_and_deterministic_are_explicit() -> None:
     bge = app_module.build_reranker_provider(AppSettings(reranker_provider="bge"))
+    silicon = app_module.build_reranker_provider(
+        AppSettings(
+            reranker_provider="silicon",
+            reranker_endpoint_url="https://api.siliconflow.cn/v1/rerank",
+            reranker_api_key="secret-key",
+        )
+    )
     deterministic = app_module.build_reranker_provider(
         AppSettings(reranker_provider="deterministic")
     )
 
     assert isinstance(bge, BGERerankerProvider)
+    assert isinstance(silicon, SiliconFlowRerankerProvider)
     assert isinstance(deterministic, DeterministicRerankerProvider)
 
 

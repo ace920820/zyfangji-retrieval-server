@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
+from zyfangji_retrieval import cli as cli_module
 from zyfangji_retrieval.cli import app
 from zyfangji_retrieval.domain.index_models import IndexValidationResult
 from zyfangji_retrieval.domain.index_models import ActiveIndexRecord, IndexBuildRecord
@@ -413,6 +414,7 @@ def test_index_rebuild_cli_no_activate_validates_without_setting_active(tmp_path
             str(db_path),
             "--bm25-index-root",
             str(bm25_root),
+            "--local-demo",
             "--no-activate",
         ],
         catch_exceptions=False,
@@ -436,6 +438,7 @@ def test_index_rebuild_cli_activate_sets_active_index(tmp_path: Path) -> None:
             str(db_path),
             "--bm25-index-root",
             str(bm25_root),
+            "--local-demo",
             "--activate",
         ],
         catch_exceptions=False,
@@ -446,6 +449,74 @@ def test_index_rebuild_cli_activate_sets_active_index(tmp_path: Path) -> None:
     assert '"status": "active"' in result.output
     assert active is not None
     assert active.index_version in result.output
+
+
+def test_index_rebuild_cli_uses_configured_embedding_provider_and_qdrant(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    db_path = tmp_path / "metadata.db"
+    bm25_root = tmp_path / "bm25"
+    import_workbook_to_metadata(SAMPLE_WORKBOOK, db_path)
+    calls: dict[str, object] = {}
+
+    class ConfiguredProvider(FakeEmbeddingProvider):
+        provider_id = "silicon"
+        model_id = "BAAI/bge-m3"
+        vector_size = 4
+
+    class ConfiguredQdrantIndex(FakeQdrantIndex):
+        def __init__(
+            self,
+            client: object,
+            collection_prefix: str,
+            alias_name: str,
+            vector_size: int,
+        ) -> None:
+            super().__init__()
+            calls["qdrant_client"] = client
+            calls["collection_prefix"] = collection_prefix
+            calls["alias_name"] = alias_name
+            calls["vector_size"] = vector_size
+
+        def create_collection(self, index_version: str) -> str:
+            self.calls.append("create_collection")
+            return f"configured_{index_version}"
+
+    class ConfiguredQdrantClient:
+        def __init__(self, *, url: str) -> None:
+            self.url = url
+            calls["qdrant_url"] = url
+
+    monkeypatch.setenv("ZYFANGJI_EMBEDDING_PROVIDER", "silicon")
+    monkeypatch.setenv("ZYFANGJI_EMBEDDING_ENDPOINT_URL", "https://example.test/embeddings")
+    monkeypatch.setenv("ZYFANGJI_EMBEDDING_API_KEY", "secret-key")
+    monkeypatch.setenv("ZYFANGJI_EMBEDDING_VECTOR_SIZE", "4")
+    monkeypatch.setenv("ZYFANGJI_QDRANT_URL", "http://localhost:6333")
+    monkeypatch.setattr(cli_module, "build_embedding_provider", lambda settings: ConfiguredProvider())
+    monkeypatch.setattr(cli_module, "QdrantVectorIndex", ConfiguredQdrantIndex)
+    monkeypatch.setattr(cli_module, "QdrantClient", ConfiguredQdrantClient)
+
+    result = runner.invoke(
+        app,
+        [
+            "index-rebuild",
+            "--db-path",
+            str(db_path),
+            "--bm25-index-root",
+            str(bm25_root),
+            "--no-activate",
+        ],
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert '"provider_id": "silicon"' in result.output
+    assert '"model_id": "BAAI/bge-m3"' in result.output
+    assert calls["qdrant_url"] == "http://localhost:6333"
+    assert calls["collection_prefix"] == "zyfangji_entries"
+    assert calls["alias_name"] == "zyfangji_entries_active"
+    assert calls["vector_size"] == 4
 
 
 def test_index_validate_cli_returns_validation_without_mutating_active(tmp_path: Path) -> None:
@@ -460,6 +531,7 @@ def test_index_validate_cli_returns_validation_without_mutating_active(tmp_path:
             str(db_path),
             "--bm25-index-root",
             str(bm25_root),
+            "--local-demo",
             "--no-activate",
         ],
         catch_exceptions=False,

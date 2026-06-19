@@ -100,7 +100,7 @@ class BgeM3HttpEmbeddingProvider:
 
 
 def build_embedding_provider(settings: AppSettings) -> EmbeddingProvider:
-    if settings.embedding_provider == "bge_m3":
+    if settings.embedding_provider in {"bge_m3", "silicon"}:
         if not settings.embedding_endpoint_url:
             raise EmbeddingProviderError("bge_m3 embedding endpoint is not configured")
         return BgeM3HttpEmbeddingProvider(

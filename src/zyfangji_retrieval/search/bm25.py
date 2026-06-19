@@ -39,8 +39,8 @@ class BM25Retriever:
             k=recall_topk,
             show_progress=False,
         )
-        entry_ids = list(results[0]) if results else []
-        raw_scores = list(scores[0]) if scores else []
+        entry_ids = list(results[0]) if len(results) > 0 else []
+        raw_scores = list(scores[0]) if len(scores) > 0 else []
         return [
             BM25RecallCandidate(entry_id=str(entry_id), rank=rank, score=float(score))
             for rank, (entry_id, score) in enumerate(zip(entry_ids, raw_scores, strict=False), start=1)

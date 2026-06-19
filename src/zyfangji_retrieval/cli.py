@@ -35,6 +35,7 @@ from zyfangji_retrieval.ingestion.reports import RowIssue, build_import_report
 from zyfangji_retrieval.persistence.jsonl import export_entries_jsonl
 from zyfangji_retrieval.persistence.index_state import SQLiteIndexStateStore
 from zyfangji_retrieval.persistence.sqlite import SQLiteMetadataStore
+from zyfangji_retrieval.search.embedding_factory import build_embedding_provider
 
 
 app = typer.Typer(no_args_is_help=True)
@@ -142,14 +143,24 @@ def index_rebuild(
     metadata_version: str | None = typer.Option(None, "--metadata-version"),
     bm25_index_root: Path = typer.Option(Path("var/indexes/bm25"), "--bm25-index-root"),
     activate: bool = typer.Option(True, "--activate/--no-activate"),
+    local_demo: bool = typer.Option(False, "--local-demo/--no-local-demo"),
 ) -> None:
     settings = get_settings()
-    provider = DeterministicEmbeddingProvider(vector_size=settings.embedding_vector_size)
-    qdrant_index = LocalQdrantVectorIndex(
-        collection_prefix=settings.qdrant_collection_prefix,
-        alias_name=settings.qdrant_alias,
-        vector_size=provider.vector_size,
-    )
+    if local_demo:
+        provider = DeterministicEmbeddingProvider(vector_size=settings.embedding_vector_size)
+        qdrant_index = LocalQdrantVectorIndex(
+            collection_prefix=settings.qdrant_collection_prefix,
+            alias_name=settings.qdrant_alias,
+            vector_size=provider.vector_size,
+        )
+    else:
+        provider = build_embedding_provider(settings)
+        qdrant_index = QdrantVectorIndex(
+            client=QdrantClient(url=settings.qdrant_url),
+            collection_prefix=settings.qdrant_collection_prefix,
+            alias_name=settings.qdrant_alias,
+            vector_size=provider.vector_size,
+        )
     state_store = SQLiteIndexStateStore(db_path)
     service = IndexLifecycleService(
         db_path=db_path,

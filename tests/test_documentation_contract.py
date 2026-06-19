@@ -55,16 +55,16 @@ def test_openapi_exposes_current_http_routes_only() -> None:
 
 def test_readme_documents_mvp_boundaries_and_links() -> None:
     text = _read("README.md")
-    assert "Retrieval-only service" in text
+    assert "只做检索" in text
     assert "OpenAPI is available at /docs and /openapi.json" in text
-    assert "Import and rebuild are CLI-only operator workflows in v1" in text
+    assert "CLI-only operator workflows in v1" in text
     assert "uv run zyfangji-retrieval import-excel" in text
     assert "uv run zyfangji-retrieval index-rebuild" in text
     assert "docs/API.md" in text
     assert "docs/DEMO.md" in text
     assert "docs/DEPLOYMENT.md" in text
-    assert "not medical confidence, diagnosis probability, or prescription certainty" in text
-    assert "No chat, no autonomous diagnosis, no autonomous prescription, no customer MySQL sync, and no admin console in v1" in text
+    assert "检索分数不是 medical confidence, diagnosis probability, or prescription certainty" in text
+    assert "v1 不做聊天机器人，不做自动诊断，不做自动处方，不直连客户 MySQL 同步，也不提供后台管理系统" in text
 
 
 def test_api_docs_cover_http_cli_and_java_examples() -> None:

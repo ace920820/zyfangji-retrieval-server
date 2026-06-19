@@ -24,9 +24,12 @@ class AppSettings(BaseSettings):
     rrf_k: int = 60
     reranker_provider: str = "bge"
     reranker_model_id: str = "BAAI/bge-reranker-v2-m3"
+    reranker_endpoint_url: str | None = None
+    reranker_api_key: str | None = None
+    reranker_timeout_seconds: float = 30.0
     reranker_required: bool = True
     api_title: str = "Zyfangji Retrieval Service"
 
 
 def get_settings() -> AppSettings:
-    return AppSettings()
+    return AppSettings(_env_file=Path(".env"), _env_file_encoding="utf-8")

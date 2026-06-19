@@ -1,8 +1,9 @@
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 
-from zyfangji_retrieval.config import AppSettings
+from zyfangji_retrieval.config import AppSettings, get_settings
 from zyfangji_retrieval.domain.index_models import (
     ActiveIndexRecord,
     IndexBuildRecord,
@@ -60,6 +61,28 @@ def test_app_settings_exposes_index_defaults() -> None:
     assert settings.embedding_vector_size == 1024
     assert settings.bm25_index_root.as_posix() == "var/indexes/bm25"
     assert settings.api_title == "Zyfangji Retrieval Service"
+
+
+def test_get_settings_loads_project_dotenv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".env").write_text(
+        "\n".join(
+            [
+                "ZYFANGJI_EMBEDDING_PROVIDER=silicon",
+                "ZYFANGJI_EMBEDDING_ENDPOINT_URL=https://example.test/embeddings",
+                "ZYFANGJI_EMBEDDING_API_KEY=secret-key",
+                "ZYFANGJI_QDRANT_URL=http://localhost:6333",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    settings = get_settings()
+
+    assert settings.embedding_provider == "silicon"
+    assert settings.embedding_endpoint_url == "https://example.test/embeddings"
+    assert settings.embedding_api_key == "secret-key"
+    assert settings.qdrant_url == "http://localhost:6333"
 
 
 def test_index_models_serialize_stable_status_fields() -> None:

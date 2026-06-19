@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from typing import Any, Protocol
 
+import httpx
 from pydantic import BaseModel, Field
 
 from zyfangji_retrieval.indexing.tokenizer import tokenize_chinese_text
@@ -80,6 +81,87 @@ class BGERerankerProvider:
         for rank, candidate in enumerate(reranked, start=1):
             candidate.rerank_rank = rank
         return reranked
+
+
+class SiliconFlowRerankerProvider:
+    def __init__(
+        self,
+        endpoint_url: str,
+        api_key: str | None,
+        model_id: str = "BAAI/bge-reranker-v2-m3",
+        timeout_seconds: float = 30.0,
+        client: httpx.Client | None = None,
+    ) -> None:
+        if not endpoint_url:
+            raise RerankerProviderError("silicon reranker endpoint is not configured")
+        self.endpoint_url = endpoint_url
+        self.api_key = api_key
+        self.model_id = model_id
+        self.timeout_seconds = timeout_seconds
+        self.client = client or httpx.Client()
+
+    def rerank(self, query_text: str, candidates: Sequence[RerankCandidate]) -> list[RerankedCandidate]:
+        candidate_list = list(candidates)
+        if not candidate_list:
+            return []
+        try:
+            response = self.client.post(
+                self.endpoint_url,
+                json={
+                    "model": self.model_id,
+                    "query": query_text,
+                    "documents": [candidate.text for candidate in candidate_list],
+                    "return_documents": False,
+                },
+                headers=(
+                    {"Authorization": f"Bearer {self.api_key}"}
+                    if self.api_key
+                    else None
+                ),
+                timeout=self.timeout_seconds,
+            )
+        except Exception as exc:
+            raise RerankerProviderError("reranker provider unavailable") from exc
+
+        if getattr(response, "status_code", 500) < 200 or getattr(response, "status_code", 500) >= 300:
+            raise RerankerProviderError("reranker provider unavailable")
+
+        try:
+            payload = response.json()
+            scores_by_index = self._parse_scores(payload, len(candidate_list))
+        except RerankerProviderError:
+            raise
+        except Exception as exc:
+            raise RerankerProviderError("reranker score output is malformed") from exc
+
+        reranked = [
+            RerankedCandidate(
+                **candidate.model_dump(),
+                rerank_score=scores_by_index[index],
+            )
+            for index, candidate in enumerate(candidate_list)
+        ]
+        reranked.sort(key=lambda candidate: (-candidate.rerank_score, candidate.entry_id))
+        for rank, candidate in enumerate(reranked, start=1):
+            candidate.rerank_rank = rank
+        return reranked
+
+    def _parse_scores(self, payload: Any, expected_count: int) -> dict[int, float]:
+        if not isinstance(payload, dict) or not isinstance(payload.get("results"), list):
+            raise RerankerProviderError("reranker score output is malformed")
+        scores_by_index: dict[int, float] = {}
+        for item in payload["results"]:
+            if not isinstance(item, dict):
+                raise RerankerProviderError("reranker score output is malformed")
+            try:
+                index = int(item["index"])
+                score = item.get("relevance_score", item.get("score"))
+                scores_by_index[index] = float(score)
+            except (KeyError, TypeError, ValueError) as exc:
+                raise RerankerProviderError("reranker score output is malformed") from exc
+        if set(scores_by_index) != set(range(expected_count)):
+            raise RerankerProviderError("reranker score count mismatch")
+        return scores_by_index
 
 
 class DeterministicRerankerProvider:

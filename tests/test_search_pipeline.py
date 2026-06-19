@@ -24,6 +24,7 @@ from zyfangji_retrieval.search.rerank import (
     DisabledRerankerProvider,
     RerankCandidate,
     RerankerProviderError,
+    SiliconFlowRerankerProvider,
 )
 from zyfangji_retrieval.search.service import SearchService, SearchServiceError
 from zyfangji_retrieval.search.vector import VectorRetriever, VectorStoreError
@@ -90,6 +91,46 @@ class FakeBM25Store:
         )
 
 
+class AmbiguousArrayLike:
+    def __init__(self, rows: list[list[Any]]) -> None:
+        self.rows = rows
+
+    def __bool__(self) -> bool:
+        raise ValueError("truth value is ambiguous")
+
+    def __len__(self) -> int:
+        return len(self.rows)
+
+    def __getitem__(self, index: int) -> list[Any]:
+        return self.rows[index]
+
+
+class FakeArrayBM25Index(FakeBM25Index):
+    def retrieve(
+        self,
+        tokenized_queries: list[list[str]],
+        *,
+        corpus: list[str],
+        k: int,
+        show_progress: bool,
+    ) -> tuple[AmbiguousArrayLike, AmbiguousArrayLike]:
+        self.calls.append(
+            {
+                "tokenized_queries": tokenized_queries,
+                "corpus": corpus,
+                "k": k,
+                "show_progress": show_progress,
+            }
+        )
+        return AmbiguousArrayLike([["entry-2", "entry-1"]]), AmbiguousArrayLike([[9.5, 3.0]])
+
+
+class FakeArrayBM25Store(FakeBM25Store):
+    def __init__(self, root: Path) -> None:
+        super().__init__(root)
+        self.index = FakeArrayBM25Index()
+
+
 def test_bm25_recall_loads_active_path_and_requests_top50(tmp_path: Path) -> None:
     active = _active(tmp_path)
     retriever = BM25Retriever(index_store_factory=FakeBM25Store)
@@ -106,6 +147,16 @@ def test_bm25_recall_loads_active_path_and_requests_top50(tmp_path: Path) -> Non
     assert store.index.calls[0]["corpus"] == ["entry-1", "entry-2"]
     assert store.index.calls[0]["show_progress"] is False
     assert store.index.calls[0]["tokenized_queries"][0]
+
+
+def test_bm25_recall_accepts_array_like_results_without_truthiness(tmp_path: Path) -> None:
+    active = _active(tmp_path)
+    retriever = BM25Retriever(index_store_factory=FakeArrayBM25Store)
+
+    candidates = retriever.recall("太阳病 脉浮紧", active=active, recall_topk=50)
+
+    assert [candidate.entry_id for candidate in candidates] == ["entry-2", "entry-1"]
+    assert [candidate.score for candidate in candidates] == [9.5, 3.0]
 
 
 class FakeHttpResponse:
@@ -236,6 +287,19 @@ def test_build_embedding_provider_requires_bge_endpoint_and_explicit_determinist
 
     default_provider = AppSettings().embedding_provider
     assert default_provider == "bge_m3"
+
+
+def test_build_embedding_provider_accepts_silicon_alias() -> None:
+    provider = build_embedding_provider(
+        AppSettings(
+            embedding_provider="silicon",
+            embedding_endpoint_url="https://api.siliconflow.cn/v1/embeddings",
+            embedding_api_key="secret-key",
+            embedding_vector_size=4,
+        )
+    )
+
+    assert isinstance(provider, BgeM3HttpEmbeddingProvider)
 
 
 class FakeEmbeddingProvider:
@@ -398,6 +462,64 @@ def test_bge_reranker_provider_wraps_scoring_failures_without_patient_text() -> 
             raise RuntimeError("provider leaked low-level failure")
 
     provider = BGERerankerProvider(reranker=BrokenReranker())
+
+    with pytest.raises(RerankerProviderError) as error:
+        provider.rerank("隐私患者文本", [RerankCandidate(entry_id="entry-a", text="证据文本")])
+
+    assert "reranker provider unavailable" in str(error.value)
+    assert "隐私患者文本" not in str(error.value)
+    assert "证据文本" not in str(error.value)
+
+
+def test_siliconflow_reranker_posts_documents_and_sorts_results() -> None:
+    client = FakeHttpClient(
+        FakeHttpResponse(
+            {
+                "results": [
+                    {"index": 0, "relevance_score": 0.2},
+                    {"index": 1, "relevance_score": 0.8},
+                ]
+            }
+        )
+    )
+    provider = SiliconFlowRerankerProvider(
+        endpoint_url="https://api.siliconflow.cn/v1/rerank",
+        api_key="secret-key",
+        model_id="BAAI/bge-reranker-v2-m3",
+        timeout_seconds=15.0,
+        client=client,
+    )
+    candidates = [
+        RerankCandidate(entry_id="entry-a", text="条文 A"),
+        RerankCandidate(entry_id="entry-b", text="条文 B"),
+    ]
+
+    reranked = provider.rerank("主症:\n太阳病", candidates)
+
+    assert client.posts == [
+        {
+            "endpoint_url": "https://api.siliconflow.cn/v1/rerank",
+            "json": {
+                "model": "BAAI/bge-reranker-v2-m3",
+                "query": "主症:\n太阳病",
+                "documents": ["条文 A", "条文 B"],
+                "return_documents": False,
+            },
+            "headers": {"Authorization": "Bearer secret-key"},
+            "timeout": 15.0,
+        }
+    ]
+    assert [candidate.entry_id for candidate in reranked] == ["entry-b", "entry-a"]
+    assert [candidate.rerank_score for candidate in reranked] == [0.8, 0.2]
+    assert [candidate.rerank_rank for candidate in reranked] == [1, 2]
+
+
+def test_siliconflow_reranker_wraps_provider_failures_without_patient_text() -> None:
+    provider = SiliconFlowRerankerProvider(
+        endpoint_url="https://api.siliconflow.cn/v1/rerank",
+        api_key="secret-key",
+        client=FakeHttpClient(FakeHttpResponse({"error": "bad"}, status_code=503)),
+    )
 
     with pytest.raises(RerankerProviderError) as error:
         provider.rerank("隐私患者文本", [RerankCandidate(entry_id="entry-a", text="证据文本")])
